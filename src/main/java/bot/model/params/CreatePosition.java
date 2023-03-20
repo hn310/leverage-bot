@@ -1,13 +1,11 @@
 package bot.model.params;
 
-import org.web3j.abi.datatypes.generated.Uint256;
-
 public class CreatePosition {
     private String indexToken;
     private boolean isLong;
-    private Uint256 collateralDelta;
-    private Uint256 sizeDelta;
-    private Uint256 acceptablePrice;
+    private String collateralDelta;
+    private String sizeDelta;
+    private String acceptablePrice;
 
     public String getIndexToken() {
         return indexToken;
@@ -25,28 +23,27 @@ public class CreatePosition {
         this.isLong = isLong;
     }
 
-    public Uint256 getCollateralDelta() {
+    public String getCollateralDelta() {
         return collateralDelta;
     }
 
-    public void setCollateralDelta(Uint256 collateralDelta) {
+    public void setCollateralDelta(String collateralDelta) {
         this.collateralDelta = collateralDelta;
     }
 
-    public Uint256 getSizeDelta() {
+    public String getSizeDelta() {
         return sizeDelta;
     }
 
-    public void setSizeDelta(Uint256 sizeDelta) {
+    public void setSizeDelta(String sizeDelta) {
         this.sizeDelta = sizeDelta;
     }
 
-    public Uint256 getAcceptablePrice() {
+    public String getAcceptablePrice() {
         return acceptablePrice;
     }
 
-    public void setAcceptablePrice(Uint256 acceptablePrice) {
+    public void setAcceptablePrice(String acceptablePrice) {
         this.acceptablePrice = acceptablePrice;
     }
-
 }

@@ -1,8 +1,8 @@
 package bot.utils;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -14,6 +14,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import bot.constant.AccConstant;
+import bot.constant.ActionsConstant;
+import bot.constant.GMXConstant;
 import bot.model.TradeHistory;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
@@ -22,21 +24,17 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class AccUtils {
-    private static String GMX_ACTIONS_URL = "https://api.gmx.io/actions";
-
     public static double getBalanceInEth(Web3j web3j) throws InterruptedException, ExecutionException {
-        EthGetBalance ethGetBalance = web3j.ethGetBalance(AccConstant.PUBLIC_KEY, DefaultBlockParameterName.LATEST)
+        EthGetBalance ethGetBalance = web3j.ethGetBalance(AccConstant.ADDRESS, DefaultBlockParameterName.LATEST)
                 .sendAsync().get();
 
         BigInteger wei = ethGetBalance.getBalance();
-
-        BigInteger decimal = BigDecimal.valueOf(Math.pow(10, 18)).toBigInteger();
-        return wei.doubleValue() / decimal.doubleValue();
+        return wei.doubleValue() / Math.pow(10, 18);
     }
 
-    public static List<TradeHistory> getTradeHistories() throws IOException {
+    public static List<TradeHistory> getGodTradeHistories() throws IOException {
         OkHttpClient client = new OkHttpClient();
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(GMX_ACTIONS_URL).newBuilder();
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(GMXConstant.GMX_ACTIONS_URL).newBuilder();
         urlBuilder.addQueryParameter("account", AccConstant.GOD_KEY);
 
         String url = urlBuilder.build().toString();
@@ -48,6 +46,17 @@ public class AccUtils {
 
         String resStr = response.body().string();
         Gson gson = new Gson();
-        return gson.fromJson(resStr,new TypeToken<List<TradeHistory>>(){}.getType());
+        String sanitizedRes = resStr.replaceAll("\"\\{", "{").replaceAll("}\"", "}").replaceAll("\\\\", "");
+        List<TradeHistory> godTradeHistories = gson.fromJson(sanitizedRes, new TypeToken<List<TradeHistory>>() {
+        }.getType());
+        List<TradeHistory> filteredTradeHistories = new ArrayList<TradeHistory>();
+        for (TradeHistory th : godTradeHistories) {
+            // other actions are self-invoked by smart contracts -> ignored
+            if (th.getTradeHistoryData().getAction().equals(ActionsConstant.CREATE_DECREASE_POSITION)
+                    || th.getTradeHistoryData().getAction().equals(ActionsConstant.CREATE_INCREASE_POSITION)) {
+                filteredTradeHistories.add(th);
+            }
+        }
+        return filteredTradeHistories;
     }
 }
