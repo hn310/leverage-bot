@@ -1,11 +1,11 @@
 package bot.model;
 
-import bot.model.params.CreatePosition;
+import bot.model.params.IncreaseDecreasePosition;
 
 public class TradeHistoryData {
     private int blockNumber;
     private String action;
-    private CreatePosition params;
+    private IncreaseDecreasePosition params;
     private String account;
     private String timestamp;
     private String txhash;
@@ -26,11 +26,11 @@ public class TradeHistoryData {
         this.action = action;
     }
 
-    public CreatePosition getParams() {
+    public IncreaseDecreasePosition getParams() {
         return params;
     }
 
-    public void setParams(CreatePosition params) {
+    public void setParams(IncreaseDecreasePosition params) {
         this.params = params;
     }
 

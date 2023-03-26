@@ -1,17 +1,15 @@
 package bot.model.params;
 
-import org.web3j.abi.datatypes.generated.Uint256;
-
 import bot.model.params.sub.Flags;
 
 public class IncreaseDecreasePosition {
     private String key;
     private String collateralToken;
     private String indexToken;
-    private Uint256 collateralDelta;
-    private Uint256 sizeDelta;
+    private String collateralDelta;
+    private String sizeDelta;
     private boolean isLong;
-    private Uint256 price;
+    private String price;
     private Flags flags;
     private int feeBasisPoints;
 
@@ -39,22 +37,6 @@ public class IncreaseDecreasePosition {
         this.indexToken = indexToken;
     }
 
-    public Uint256 getCollateralDelta() {
-        return collateralDelta;
-    }
-
-    public void setCollateralDelta(Uint256 collateralDelta) {
-        this.collateralDelta = collateralDelta;
-    }
-
-    public Uint256 getSizeDelta() {
-        return sizeDelta;
-    }
-
-    public void setSizeDelta(Uint256 sizeDelta) {
-        this.sizeDelta = sizeDelta;
-    }
-
     public boolean isLong() {
         return isLong;
     }
@@ -63,11 +45,27 @@ public class IncreaseDecreasePosition {
         this.isLong = isLong;
     }
 
-    public Uint256 getPrice() {
+    public String getCollateralDelta() {
+        return collateralDelta;
+    }
+
+    public void setCollateralDelta(String collateralDelta) {
+        this.collateralDelta = collateralDelta;
+    }
+
+    public String getSizeDelta() {
+        return sizeDelta;
+    }
+
+    public void setSizeDelta(String sizeDelta) {
+        this.sizeDelta = sizeDelta;
+    }
+
+    public String getPrice() {
         return price;
     }
 
-    public void setPrice(Uint256 price) {
+    public void setPrice(String price) {
         this.price = price;
     }
 

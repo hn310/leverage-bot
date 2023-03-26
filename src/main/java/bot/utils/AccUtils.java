@@ -1,6 +1,10 @@
 package bot.utils;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +36,7 @@ public class AccUtils {
         return wei.doubleValue() / Math.pow(10, 18);
     }
 
-    public static List<TradeHistory> getGodTradeHistories() throws IOException {
+    public static List<TradeHistory> getGodTradeHistories(int lastBlockNo) throws IOException {
         OkHttpClient client = new OkHttpClient();
         HttpUrl.Builder urlBuilder = HttpUrl.parse(GMXConstant.GMX_ACTIONS_URL).newBuilder();
         urlBuilder.addQueryParameter("account", AccConstant.GOD_KEY);
@@ -51,12 +55,24 @@ public class AccUtils {
         }.getType());
         List<TradeHistory> filteredTradeHistories = new ArrayList<TradeHistory>();
         for (TradeHistory th : godTradeHistories) {
-            // other actions are self-invoked by smart contracts -> ignored
-            if (th.getTradeHistoryData().getAction().equals(ActionsConstant.CREATE_DECREASE_POSITION)
-                    || th.getTradeHistoryData().getAction().equals(ActionsConstant.CREATE_INCREASE_POSITION)) {
-                filteredTradeHistories.add(th);
+            if (th.getTradeHistoryData().getBlockNumber() > lastBlockNo) {
+                // open/close only success if below actions are called -> ignore other actions
+                if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)
+                        || th.getTradeHistoryData().getAction().startsWith(ActionsConstant.DECREASE_POSITION)) {
+                    filteredTradeHistories.add(th);
+                }
             }
         }
         return filteredTradeHistories;
+    }
+
+    public static int readLastBlockNo() throws FileNotFoundException {
+        int lastBlockNo = 0;
+
+        String path = "./blockNo.txt";
+        FileInputStream fis = new FileInputStream(path);
+        BufferedReader in = new BufferedReader(new InputStreamReader(fis));
+
+        return lastBlockNo;
     }
 }
