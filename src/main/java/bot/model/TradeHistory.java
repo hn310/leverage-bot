@@ -19,5 +19,4 @@ public class TradeHistory {
     public void setTradeHistoryData(TradeHistoryData tradeHistoryData) {
         this.data = tradeHistoryData;
     }
-
 }

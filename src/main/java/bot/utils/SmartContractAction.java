@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
@@ -24,10 +26,12 @@ import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.exceptions.TransactionException;
 
+import bot.Main;
 import bot.constant.AccConstant;
 import bot.constant.GMXConstant;
 
 public class SmartContractAction {
+    private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
 
     public double getBalanceInEth(Web3j web3j) throws InterruptedException, ExecutionException {
         EthGetBalance ethGetBalance = web3j.ethGetBalance(AccConstant.ADDRESS, DefaultBlockParameterName.LATEST)
@@ -148,8 +152,17 @@ public class SmartContractAction {
         }
     }
 
-    private double convertToUsd(BigInteger price, int decimals) {
+    public double convertToUsd(BigInteger price, int decimals) {
         BigDecimal convertedPrice = new BigDecimal(price.toString());
         return convertedPrice.doubleValue() / Math.pow(10, decimals);
+    }
+
+    public Uint256 calculateSizeDelta(String collateralDelta, String sizeDelta, Uint256 amountIn) {
+        BigDecimal _collateralDelta = new BigDecimal(collateralDelta);
+        BigDecimal _sizeDelta = new BigDecimal(sizeDelta);
+        double leverage = _sizeDelta.doubleValue() / _collateralDelta.doubleValue();
+        logger.info("leverage: " + leverage);
+        BigDecimal _amountIn = new BigDecimal(amountIn.getValue());
+        return new Uint256(BigDecimal.valueOf(_amountIn.doubleValue()*leverage).toBigInteger());
     }
 }

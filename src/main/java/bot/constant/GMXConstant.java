@@ -2,8 +2,11 @@ package bot.constant;
 
 import java.math.BigInteger;
 
+import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Bool;
+import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.utils.Numeric;
 
 public class GMXConstant {
     public static String GMX_ACTIONS_URL = "https://api.gmx.io/actions";
@@ -25,5 +28,12 @@ public class GMXConstant {
     
     public static int USD_PRICE_PRECISION = 30;
     public static int USD_DECIMALS = 6;
+    
+    // trade related params
+    public static Uint256 AMOUNT_IN = new Uint256(new BigInteger("10000000")); // 10 USD
+    public static Uint256 MIN_OUT = new Uint256(new BigInteger("0"));
     public static Uint256 EXECUTION_FEE = new Uint256(new BigInteger("100000000000000")); // 0.0000000001 ETH
+    public static Bytes32 REFERRAL_CODE = new Bytes32(
+            Numeric.hexStringToByteArray("0x0000000000000000000000000000000000000000000000000000000000000000")) ;
+    public static Address CALLBACK_TARGET = new Address("0x0000000000000000000000000000000000000000");
 }
