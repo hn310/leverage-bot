@@ -20,6 +20,7 @@ import bot.constant.AccConstant;
 import bot.constant.ActionsConstant;
 import bot.constant.GMXConstant;
 import bot.constant.RPCConstant;
+import bot.model.PositionResponse;
 import bot.model.TradeHistory;
 import bot.model.TradeModel;
 import bot.utils.ApiAction;
@@ -63,6 +64,7 @@ public class Main {
         for (TradeHistory th : tradeHistories) {
             // STEP 2: Get info about position
             // token used to long/short (BTC, ETH)
+            String collateralToken = th.getTradeHistoryData().getParams().getCollateralToken();
             String indexToken = th.getTradeHistoryData().getParams().getIndexToken();
             String collateralDelta = th.getTradeHistoryData().getParams().getCollateralDelta(); // original USD
             String sizeDelta = th.getTradeHistoryData().getParams().getSizeDelta(); // multiplied (after margin) USD
@@ -74,6 +76,10 @@ public class Main {
             // STEP 3: Create similar position
             TradeModel tradeModel = new TradeModel();
             List<Address> _path = new ArrayList<Address>();
+            // TODO
+            // increase long: path[USDC, BTC]
+            // decrease long: path[BTC]
+            // increase/decrease short: path[USDC] only
             _path.add(new Address(GMXConstant.USDC_ADDRESS)); // use USDC to trade
             _path.add(new Address(indexToken));
 
@@ -83,11 +89,13 @@ public class Main {
             if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)) {
                 _collateralDelta = GMXConstant.AMOUNT_IN;
                 _sizeDelta = scAction.calculateSizeDelta(collateralDelta, sizeDelta, GMXConstant.AMOUNT_IN);
-                logger.info("sizeDelta: " + scAction.convertToUsd(_sizeDelta.getValue(), GMXConstant.USD_DECIMALS));
             }
             // If decrease position: collateralDelta = 0, sizeDelta = getFromSmartContract
             else {
-
+                _collateralDelta = new Uint256(0);
+                // TODO change to own private key
+                PositionResponse ps = scAction.getPosition(web3j, new Address (AccConstant.GOD_KEY), new Address (collateralToken), new Address (indexToken), new Bool(isLong));
+                _sizeDelta = ps.getSize();
             }
             tradeModel.setPath(_path);
             tradeModel.setIndexToken(new Address(indexToken));
@@ -105,6 +113,7 @@ public class Main {
         // STEP 4: Write newest last block number to file
         lastBlockNo = tradeHistories.get(0).getTradeHistoryData().getBlockNumber(); // get newest last blockNo
         logger.info("STEP 4 (lastBlockNo): " + lastBlockNo);
+        // TODO uncomment this
 //        apiAction.writeLastBlockNo(lastBlockNo); // write latest block number to file
     }
 }

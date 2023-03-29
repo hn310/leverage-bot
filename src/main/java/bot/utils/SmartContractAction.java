@@ -26,9 +26,9 @@ import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.exceptions.TransactionException;
 
-import bot.Main;
 import bot.constant.AccConstant;
 import bot.constant.GMXConstant;
+import bot.model.PositionResponse;
 
 public class SmartContractAction {
     private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
@@ -63,7 +63,7 @@ public class SmartContractAction {
     }
 
     @SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
-    public void getPositions(Web3j web3j)
+    public List<Type> getPositions(Web3j web3j)
             throws IOException, TransactionException, InterruptedException, ExecutionException {
         int collateralTokensNumber = 0;
 
@@ -144,12 +144,53 @@ public class SmartContractAction {
                 DefaultBlockParameterName.LATEST).sendAsync().get();
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
-        for (int i = 0; i < response.size(); i++) {
-            System.out.println(response.get(i).getValue());
-            if (i % 9 == 8) {
-                System.out.println("\n");
-            }
+        return response;
+    }
+    
+    @SuppressWarnings("rawtypes")
+    public PositionResponse getPosition(Web3j web3j, Address _account, Address _collateralToken, Address _indexToken, Bool _isLong) throws InterruptedException, ExecutionException {
+        PositionResponse ps = new PositionResponse();
+        List<Type> inputs = new ArrayList<Type>();
+        List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
+
+        // set inputs
+        inputs.add(_account);
+        inputs.add(_collateralToken);
+        inputs.add(_indexToken);
+        inputs.add(_isLong);
+
+        // set outputs
+        outputs.add(new TypeReference<Uint256>() {}); // size
+        outputs.add(new TypeReference<Uint256>() {}); // collateral
+        outputs.add(new TypeReference<Uint256>() {}); // average price
+        outputs.add(new TypeReference<Uint256>() {}); // entry funding rate
+        outputs.add(new TypeReference<Uint256>() {}); // reserve amount
+        outputs.add(new TypeReference<Uint256>() {}); // realised pnl
+        outputs.add(new TypeReference<Bool>() {}); // has profit
+        outputs.add(new TypeReference<Uint256>() {}); // last increased time
+
+        // call function
+        Function function = new Function("getPosition", // Function name
+                inputs, outputs); // Function returned parameters
+
+        String encodedFunction = FunctionEncoder.encode(function);
+        EthCall encodedResponse = web3j.ethCall(
+                Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.VAULT_ADDRESS, encodedFunction),
+                DefaultBlockParameterName.LATEST).sendAsync().get();
+
+        List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
+        if (response.size() > 0) {
+            ps.setSize(new Uint256((BigInteger) response.get(0).getValue()));
+            ps.setCollateral(new Uint256((BigInteger) response.get(1).getValue()));
+            ps.setAveragePrice(new Uint256((BigInteger) response.get(2).getValue()));
+            ps.setEntryFundingRate(new Uint256((BigInteger) response.get(3).getValue()));
+            ps.setReserveAmount(new Uint256((BigInteger) response.get(4).getValue()));
+            ps.setRealisedPnl(new Uint256((BigInteger) response.get(5).getValue()));
+            ps.setHasProfit(new Bool((Boolean) response.get(6).getValue()));
+            ps.setLastIncreasedTime(new Uint256((BigInteger) response.get(7).getValue()));
         }
+        logger.info("sizeDelta to close position: " + ps.getSize().getValue());
+        return ps;
     }
 
     public double convertToUsd(BigInteger price, int decimals) {
