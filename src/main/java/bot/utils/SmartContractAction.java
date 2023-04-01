@@ -189,6 +189,8 @@ public class SmartContractAction {
             ps.setHasProfit(new Bool((Boolean) response.get(6).getValue()));
             ps.setLastIncreasedTime(new Uint256((BigInteger) response.get(7).getValue()));
         }
+        // sizeDelta only have value with open position.
+        // for close position, sizeDelta = 0
         logger.info("sizeDelta to close position: " + ps.getSize().getValue());
         return ps;
     }

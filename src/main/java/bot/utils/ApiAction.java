@@ -6,7 +6,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,6 +67,9 @@ public class ApiAction {
     }
 
     public void writeLastBlockNo(int lastBlockNo) throws IOException {
+        if (!Files.exists(Paths.get(MiscConstant.BLOCK_NO_FILE), LinkOption.NOFOLLOW_LINKS)) {
+            Files.createFile(Paths.get(MiscConstant.BLOCK_NO_FILE));
+        }
         String oldContent = Files.readString(Path.of(MiscConstant.BLOCK_NO_FILE), Charset.defaultCharset());
         FileWriter fw = new FileWriter(MiscConstant.BLOCK_NO_FILE, false); // the true will append the new data
         fw.write(lastBlockNo + System.getProperty("line.separator") + oldContent); // appends the string to the file

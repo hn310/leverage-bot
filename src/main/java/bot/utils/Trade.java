@@ -19,7 +19,8 @@ import bot.constant.ActionsConstant;
 import bot.constant.GMXConstant;
 import bot.model.PositionResponse;
 import bot.model.TradeHistory;
-import bot.model.TradeModel;
+import bot.model.ClosePositionRequest;
+import bot.model.OpenPositionRequest;
 
 public class Trade {
     private static final Logger logger = LogManager.getLogger(Trade.class);
@@ -55,7 +56,6 @@ public class Trade {
             String acceptablePrice = th.getTradeHistoryData().getParams().getPrice();
 
             // STEP 3: Create similar position
-            TradeModel tradeModel = new TradeModel();
             List<Address> _path = new ArrayList<Address>();
             if (th.getTradeHistoryData().getParams().isLong()) {
                 if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)) {
@@ -86,22 +86,40 @@ public class Trade {
                         new Address(collateralToken), new Address(indexToken), new Bool(isLong));
                 _sizeDelta = ps.getSize();
             }
-            tradeModel.setPath(_path);
-            tradeModel.setIndexToken(new Address(indexToken));
-            tradeModel.setAmountIn(_collateralDelta);
-            tradeModel.setSizeDelta(_sizeDelta);
-            tradeModel.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
-            tradeModel.setIsLong(new Bool(isLong));
-            tradeModel.setMinOut(GMXConstant.MIN_OUT);
-            tradeModel.setExecutionFee(GMXConstant.EXECUTION_FEE);
-            tradeModel.setReferralCode(GMXConstant.REFERRAL_CODE);
-            tradeModel.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
-            logger.info(tradeModel.toString());
+            
+            if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)) {
+                OpenPositionRequest openPositionRequest = new OpenPositionRequest();
+                openPositionRequest.setPath(_path);
+                openPositionRequest.setIndexToken(new Address(indexToken));
+                openPositionRequest.setAmountIn(_collateralDelta);
+                openPositionRequest.setSizeDelta(_sizeDelta);
+                openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
+                openPositionRequest.setIsLong(new Bool(isLong));
+                openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
+                openPositionRequest.setExecutionFee(GMXConstant.EXECUTION_FEE);
+                openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
+                openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
+                logger.info("open position: " + openPositionRequest.toString());
+            } else {
+                ClosePositionRequest closePositionRequest = new ClosePositionRequest();
+                closePositionRequest.setPath(_path);
+                closePositionRequest.setIndexToken(new Address(indexToken));
+                closePositionRequest.setCollateralDelta(_collateralDelta);
+                closePositionRequest.setSizeDelta(_sizeDelta);
+                closePositionRequest.setIsLong(new Bool(isLong));
+                closePositionRequest.setReceiver(new Address(AccConstant.ADDRESS));
+                closePositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
+                closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
+                closePositionRequest.setExecutionFee(GMXConstant.EXECUTION_FEE);
+                closePositionRequest.setWithdrawETH(new Bool(false));
+                closePositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
+                logger.info("close position: " + closePositionRequest.toString());
+            }
         }
         // STEP 4: Write newest last block number to file
         lastBlockNo = tradeHistories.get(0).getTradeHistoryData().getBlockNumber(); // get newest last blockNo
         logger.info("STEP 4 (lastBlockNo): " + lastBlockNo);
         // TODO uncomment this
-//        this.apiAction.writeLastBlockNo(lastBlockNo); // write latest block number to file
+        this.apiAction.writeLastBlockNo(lastBlockNo); // write latest block number to file
     }
 }

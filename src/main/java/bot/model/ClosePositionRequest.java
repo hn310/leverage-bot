@@ -4,19 +4,19 @@ import java.util.List;
 
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Bool;
-import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 
-public class TradeModel {
+public class ClosePositionRequest {
     private List<Address> path;
     private Address indexToken;
-    private Uint256 amountIn;
-    private Uint256 minOut;
+    private Uint256 collateralDelta;
     private Uint256 sizeDelta;
     private Bool isLong;
+    private Address receiver;
     private Uint256 acceptablePrice;
+    private Uint256 minOut;
     private Uint256 executionFee;
-    private Bytes32 referralCode;
+    private Bool withdrawETH;
     private Address callbackTarget;
 
     public List<Address> getPath() {
@@ -35,20 +35,12 @@ public class TradeModel {
         this.indexToken = indexToken;
     }
 
-    public Uint256 getAmountIn() {
-        return amountIn;
+    public Uint256 getCollateralDelta() {
+        return collateralDelta;
     }
 
-    public void setAmountIn(Uint256 amountIn) {
-        this.amountIn = amountIn;
-    }
-
-    public Uint256 getMinOut() {
-        return minOut;
-    }
-
-    public void setMinOut(Uint256 minOut) {
-        this.minOut = minOut;
+    public void setCollateralDelta(Uint256 collateralDelta) {
+        this.collateralDelta = collateralDelta;
     }
 
     public Uint256 getSizeDelta() {
@@ -67,12 +59,28 @@ public class TradeModel {
         this.isLong = isLong;
     }
 
+    public Address getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(Address receiver) {
+        this.receiver = receiver;
+    }
+
     public Uint256 getAcceptablePrice() {
         return acceptablePrice;
     }
 
     public void setAcceptablePrice(Uint256 acceptablePrice) {
         this.acceptablePrice = acceptablePrice;
+    }
+
+    public Uint256 getMinOut() {
+        return minOut;
+    }
+
+    public void setMinOut(Uint256 minOut) {
+        this.minOut = minOut;
     }
 
     public Uint256 getExecutionFee() {
@@ -83,12 +91,12 @@ public class TradeModel {
         this.executionFee = executionFee;
     }
 
-    public Bytes32 getReferralCode() {
-        return referralCode;
+    public Bool getWithdrawETH() {
+        return withdrawETH;
     }
 
-    public void setReferralCode(Bytes32 referralCode) {
-        this.referralCode = referralCode;
+    public void setWithdrawETH(Bool withdrawETH) {
+        this.withdrawETH = withdrawETH;
     }
 
     public Address getCallbackTarget() {
@@ -103,9 +111,9 @@ public class TradeModel {
     public String toString() {
         StringBuffer str = new StringBuffer();
         str.append("indexToken: " + this.indexToken.getValue() + ", ");
-        str.append("amountIn: " + this.amountIn.getValue() + ", ");
         str.append("sizeDelta: " + this.sizeDelta.getValue() + ", ");
         str.append("isLong: " + this.isLong.getValue() + ", ");
+        str.append("receiver: " + this.receiver.getValue() + ", ");
         str.append("acceptablePrice: " + this.acceptablePrice.getValue());
         return str.toString();
     }
