@@ -44,6 +44,7 @@ public class Trade {
 
         // loop through each trade history to open a similar one
         for (TradeHistory th : tradeHistories) {
+        	logger.info("god_account: " + th.getTradeHistoryData().getAccount());
             // STEP 2: Get info about position
             // token used to long/short (BTC, ETH)
             String collateralToken = th.getTradeHistoryData().getParams().getCollateralToken();
