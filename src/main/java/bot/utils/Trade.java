@@ -82,8 +82,7 @@ public class Trade {
             // If decrease position: collateralDelta = 0, sizeDelta = getFromSmartContract
             else {
                 _collateralDelta = new Uint256(0);
-                // TODO change to own private key
-                PositionResponse ps = this.scAction.getPosition(web3j, new Address(AccConstant.GOD_KEY),
+                PositionResponse ps = this.scAction.getPosition(web3j, new Address(AccConstant.SELF_ADDRESS),
                         new Address(collateralToken), new Address(indexToken), new Bool(isLong));
                 _sizeDelta = ps.getSize();
             }
@@ -108,7 +107,7 @@ public class Trade {
                 closePositionRequest.setCollateralDelta(_collateralDelta);
                 closePositionRequest.setSizeDelta(_sizeDelta);
                 closePositionRequest.setIsLong(new Bool(isLong));
-                closePositionRequest.setReceiver(new Address(AccConstant.ADDRESS));
+                closePositionRequest.setReceiver(new Address(AccConstant.SELF_ADDRESS));
                 closePositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
                 closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
                 closePositionRequest.setExecutionFee(GMXConstant.EXECUTION_FEE);

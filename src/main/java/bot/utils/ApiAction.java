@@ -63,6 +63,11 @@ public class ApiAction {
             Response response = call.execute();
 
             String resStr = response.body().string();
+            // If 'Service unavailable' error, retry one more time
+			if (resStr.contains("Service unavailable")) {
+				resStr = client.newCall(request).execute().body().string();
+			}
+ 
             Gson gson = new Gson();
             String sanitizedRes = resStr.replaceAll("\"\\{", "{").replaceAll("}\"", "}").replaceAll("\\\\", "");
             List<TradeHistory> godTradeHistories = new ArrayList<TradeHistory>();
