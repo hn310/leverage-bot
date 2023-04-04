@@ -10,7 +10,9 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,8 +92,17 @@ public class ApiAction {
                 }
             }
         }
+        
+        // remove duplicated trade histories due to call API sometimes return duplicated trade histories
+        Set<String> seenTradeIds = new HashSet<>();
+        List<TradeHistory> uniqueTradeHistories = new ArrayList<>();
+        for (TradeHistory th : filteredTradeHistories) {
+            if (seenTradeIds.add(th.getId())) {
+            	uniqueTradeHistories.add(th);
+            }
+        }
 
-		return filteredTradeHistories;
+		return uniqueTradeHistories;
     }
 
     public int readLastBlockNo() throws IOException {
