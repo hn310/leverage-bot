@@ -21,13 +21,13 @@ import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGasPrice;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.exceptions.TransactionException;
 
 import bot.constant.AccConstant;
@@ -37,15 +37,15 @@ import bot.model.PositionResponse;
 public class SmartContractAction {
     private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
 
-    public double getBalanceInEth(Web3j web3j) throws InterruptedException, ExecutionException {
-        EthGetBalance ethGetBalance = web3j.ethGetBalance(AccConstant.SELF_ADDRESS, DefaultBlockParameterName.LATEST).sendAsync().get();
+    public double getBalanceInEth(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
+        EthGetBalance ethGetBalance = web3j.ethGetBalance(AccConstant.SELF_ADDRESS, DefaultBlockParameterName.LATEST).send();
 
         BigInteger wei = ethGetBalance.getBalance();
         return wei.doubleValue() / Math.pow(10, 18);
     }
 
     @SuppressWarnings("rawtypes")
-    public double getGLPPrice(Web3j web3j) throws InterruptedException, ExecutionException {
+    public double getGLPPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
         List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
         TypeReference<Uint256> size = new TypeReference<Uint256>() {
         };
@@ -56,7 +56,7 @@ public class SmartContractAction {
 
         String encodedFunction = FunctionEncoder.encode(function);
         EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.GLP_MANAGER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST)
-                .sendAsync().get();
+                .send();
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
         double convertedPrice = convertToUsd(new BigInteger(response.get(0).getValue().toString()), GMXConstant.USD_PRICE_PRECISION);
@@ -140,15 +140,14 @@ public class SmartContractAction {
                 inputs, outputs); // Function returned parameters
 
         String encodedFunction = FunctionEncoder.encode(function);
-        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.READER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).sendAsync()
-                .get();
+        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.READER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
         return response;
     }
 
     @SuppressWarnings("rawtypes")
-    public PositionResponse getPosition(Web3j web3j, Address _account, Address _collateralToken, Address _indexToken, Bool _isLong) throws InterruptedException, ExecutionException {
+    public PositionResponse getPosition(Web3j web3j, Address _account, Address _collateralToken, Address _indexToken, Bool _isLong) throws InterruptedException, ExecutionException, IOException {
         PositionResponse ps = new PositionResponse();
         List<Type> inputs = new ArrayList<Type>();
         List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
@@ -174,8 +173,7 @@ public class SmartContractAction {
                 inputs, outputs); // Function returned parameters
 
         String encodedFunction = FunctionEncoder.encode(function);
-        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.VAULT_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).sendAsync()
-                .get();
+        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.VAULT_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
         if (response.size() > 0) {
@@ -189,7 +187,7 @@ public class SmartContractAction {
             ps.setLastIncreasedTime(new Uint256((BigInteger) response.get(7).getValue()));
         }
         // sizeDelta only have value with open position.
-        // for close position, sizeDelta = 0
+        // for closed position, sizeDelta = 0
         logger.info("sizeDelta to close position: " + ps.getSize().getValue());
         return ps;
     }
@@ -208,25 +206,24 @@ public class SmartContractAction {
         return new Uint256(BigDecimal.valueOf(_amountIn.doubleValue() * leverage).toBigInteger());
     }
 
-    public void increasePosition() {
-        Function function = new Function("functionName", // function we're calling
+    public void createIncreasePosition(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
+        Function function = new Function("createIncreasePosition", // function we're calling
                 Arrays.asList(), // Parameters to pass as Solidity Types
                 Arrays.asList());
 
-//   String encodedFunction = FunctionEncoder.encode(function);
-//   Transaction transaction = Transaction.createFunctionCallTransaction(
-//                AccConstant.SELF_ADDRESS, <gasPrice>, <gasLimit>, GMXConstant.POSITION_ROUTER_ADDRESS, <funds>, encodedFunction);
-//
-//   EthSendTransaction transactionResponse =
-//                web3j.ethSendTransaction(transaction).sendAsync().get();
-//
-//   String transactionHash = transactionResponse.getTransactionHash();
+        String encodedFunction = FunctionEncoder.encode(function);
+        Transaction transaction = Transaction.createFunctionCallTransaction(AccConstant.SELF_ADDRESS, null, getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
+                encodedFunction);
+        EthSendTransaction transactionResponse = web3j.ethSendTransaction(transaction).send();
+
+        // TODO need testing this method (write both close and open then run the 2 method for test transaction)
+        String transactionHash = transactionResponse.getTransactionHash();
 
         // wait for response using EthGetTransactionReceipt...
     }
 
-    public BigInteger getCurrentGasPrice(Web3j web3j) throws InterruptedException, ExecutionException {
-        EthGasPrice ethGasPrice = web3j.ethGasPrice().sendAsync().get();
+    public BigInteger getCurrentGasPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
+        EthGasPrice ethGasPrice = web3j.ethGasPrice().send();
         BigInteger currentGasPrice = ethGasPrice.getGasPrice();
         logger.info("current gas price: " + currentGasPrice);
         return currentGasPrice;
