@@ -19,6 +19,7 @@ import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -27,11 +28,14 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGasPrice;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.exceptions.TransactionException;
 
 import bot.constant.AccConstant;
 import bot.constant.GMXConstant;
+import bot.model.ClosePositionRequest;
+import bot.model.OpenPositionRequest;
 import bot.model.PositionResponse;
 
 public class SmartContractAction {
@@ -206,30 +210,88 @@ public class SmartContractAction {
         return new Uint256(BigDecimal.valueOf(_amountIn.doubleValue() * leverage).toBigInteger());
     }
 
-    public void createIncreasePosition(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
-        Function function = new Function("createIncreasePosition", // function we're calling
-                Arrays.asList(), // Parameters to pass as Solidity Types
-                Arrays.asList());
+    @SuppressWarnings({ "rawtypes", "deprecation" })
+	public void createIncreasePosition(Web3j web3j, OpenPositionRequest openPositionRequest) throws InterruptedException, ExecutionException, IOException {
+    	// inputs
+    	List<Type> inputs = new ArrayList<Type>();
+    	List<Address> path = openPositionRequest.getPath();
+    	inputs.add(new DynamicArray(path));
+    	inputs.add(openPositionRequest.getIndexToken());
+    	inputs.add(openPositionRequest.getAmountIn());
+    	inputs.add(openPositionRequest.getMinOut());
+    	inputs.add(openPositionRequest.getSizeDelta());
+    	inputs.add(openPositionRequest.getIsLong());
+    	inputs.add(openPositionRequest.getAcceptablePrice());
+    	inputs.add(openPositionRequest.getExecutionFee());
+    	inputs.add(openPositionRequest.getReferralCode());
+    	inputs.add(openPositionRequest.getCallbackTarget());
+    	
+    	// outputs
+    	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
+    	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
+
+    	// function call
+		Function function = new Function("createIncreasePosition", inputs, outputs);
 
         String encodedFunction = FunctionEncoder.encode(function);
-        Transaction transaction = Transaction.createFunctionCallTransaction(AccConstant.SELF_ADDRESS, null, getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
-                encodedFunction);
+		Transaction transaction = Transaction.createFunctionCallTransaction(AccConstant.SELF_ADDRESS, null,
+				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
+				encodedFunction);
         EthSendTransaction transactionResponse = web3j.ethSendTransaction(transaction).send();
 
         // TODO need testing this method (write both close and open then run the 2 method for test transaction)
         String transactionHash = transactionResponse.getTransactionHash();
 
-        // wait for response using EthGetTransactionReceipt...
+        // wait for response using EthGetTransactionReceipt
+        EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
+        logger.info("createIncreasePosition status: " + receipt.getResult().getStatus());
     }
+    
+    @SuppressWarnings("rawtypes")
+	public void createDecreasePosition(Web3j web3j, ClosePositionRequest closePositionRequest) throws InterruptedException, ExecutionException, IOException {
+		// inputs
+		List<Type> inputs = new ArrayList<Type>();
+		List<Address> path = closePositionRequest.getPath();
+		inputs.add(new DynamicArray(path));
+		inputs.add(closePositionRequest.getIndexToken());
+		inputs.add(closePositionRequest.getCollateralDelta());
+		inputs.add(closePositionRequest.getSizeDelta());
+		inputs.add(closePositionRequest.getIsLong());
+		inputs.add(closePositionRequest.getReceiver());
+		inputs.add(closePositionRequest.getAcceptablePrice());
+		inputs.add(closePositionRequest.getMinOut());
+		inputs.add(closePositionRequest.getExecutionFee());
+		inputs.add(closePositionRequest.getWithdrawETH());
+		inputs.add(closePositionRequest.getCallbackTarget());
+    	
+    	// outputs
+    	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
+    	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
+    	
+		// function call
+		Function function = new Function("createDecreasePosition", inputs, outputs);
 
-    public BigInteger getCurrentGasPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
+		String encodedFunction = FunctionEncoder.encode(function);
+		Transaction transaction = Transaction.createFunctionCallTransaction(AccConstant.SELF_ADDRESS, null,
+				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
+				encodedFunction);
+		EthSendTransaction transactionResponse = web3j.ethSendTransaction(transaction).send();
+
+		String transactionHash = transactionResponse.getTransactionHash();
+
+		// wait for response using EthGetTransactionReceipt
+		EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
+		logger.info("createDecreasePosition status: " + receipt.getResult().getStatus());
+	}
+
+    private BigInteger getCurrentGasPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
         EthGasPrice ethGasPrice = web3j.ethGasPrice().send();
         BigInteger currentGasPrice = ethGasPrice.getGasPrice();
         logger.info("current gas price: " + currentGasPrice);
         return currentGasPrice;
     }
 
-    public BigInteger getCurrentGasLimit(Web3j web3j) throws IOException {
+    private BigInteger getCurrentGasLimit(Web3j web3j) throws IOException {
         EthBlock ethBlock = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).send();
         EthBlock.Block latestBlock = ethBlock.getBlock();
         BigInteger currentGasLimit = latestBlock.getGasLimit();
