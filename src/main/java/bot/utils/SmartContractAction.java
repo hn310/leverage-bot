@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -21,16 +20,19 @@ import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.RawTransaction;
+import org.web3j.crypto.TransactionEncoder;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGasPrice;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.exceptions.TransactionException;
+import org.web3j.utils.Numeric;
 
 import bot.constant.AccConstant;
 import bot.constant.GMXConstant;
@@ -211,7 +213,7 @@ public class SmartContractAction {
     }
 
     @SuppressWarnings({ "rawtypes", "deprecation" })
-	public void createIncreasePosition(Web3j web3j, OpenPositionRequest openPositionRequest) throws InterruptedException, ExecutionException, IOException {
+	public void createIncreasePosition(Web3j web3j, Credentials credentials, OpenPositionRequest openPositionRequest) throws InterruptedException, ExecutionException, IOException {
     	// inputs
     	List<Type> inputs = new ArrayList<Type>();
     	List<Address> path = openPositionRequest.getPath();
@@ -234,21 +236,26 @@ public class SmartContractAction {
 		Function function = new Function("createIncreasePosition", inputs, outputs);
 
         String encodedFunction = FunctionEncoder.encode(function);
-		Transaction transaction = Transaction.createFunctionCallTransaction(AccConstant.SELF_ADDRESS, null,
+        BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getTransactionCount();
+        RawTransaction rawTransaction = RawTransaction.createTransaction(nonce,
 				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
 				encodedFunction);
-        EthSendTransaction transactionResponse = web3j.ethSendTransaction(transaction).send();
-
-        // TODO need testing this method (write both close and open then run the 2 method for test transaction)
-        String transactionHash = transactionResponse.getTransactionHash();
+		// Sign and send the transaction
+		byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
+		String hexValue = Numeric.toHexString(signedMessage);
+		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+		if (ethSendTransaction.hasError()) {
+			logger.error(ethSendTransaction.getError().getMessage());
+		}
+		String transactionHash = ethSendTransaction.getTransactionHash();
 
         // wait for response using EthGetTransactionReceipt
         EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
-        logger.info("createIncreasePosition status: " + receipt.getResult().getStatus());
+        logger.info("transactionHash: " + transactionHash + ", createIncreasePosition status: " + receipt.getResult().getStatus());
     }
     
     @SuppressWarnings("rawtypes")
-	public void createDecreasePosition(Web3j web3j, ClosePositionRequest closePositionRequest) throws InterruptedException, ExecutionException, IOException {
+	public void createDecreasePosition(Web3j web3j, Credentials credentials, ClosePositionRequest closePositionRequest) throws InterruptedException, ExecutionException, IOException {
 		// inputs
 		List<Type> inputs = new ArrayList<Type>();
 		List<Address> path = closePositionRequest.getPath();
@@ -272,16 +279,19 @@ public class SmartContractAction {
 		Function function = new Function("createDecreasePosition", inputs, outputs);
 
 		String encodedFunction = FunctionEncoder.encode(function);
-		Transaction transaction = Transaction.createFunctionCallTransaction(AccConstant.SELF_ADDRESS, null,
+		BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getTransactionCount();
+		RawTransaction rawTransaction = RawTransaction.createTransaction(nonce,
 				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
 				encodedFunction);
-		EthSendTransaction transactionResponse = web3j.ethSendTransaction(transaction).send();
-
-		String transactionHash = transactionResponse.getTransactionHash();
+		// Sign and send the transaction
+		byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
+		String hexValue = Numeric.toHexString(signedMessage);
+		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+		String transactionHash = ethSendTransaction.getTransactionHash();
 
 		// wait for response using EthGetTransactionReceipt
 		EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
-		logger.info("createDecreasePosition status: " + receipt.getResult().getStatus());
+		logger.info("transactionHash: " + transactionHash + ", createDecreasePosition status: " + receipt.getResult().getStatus());
 	}
 
     private BigInteger getCurrentGasPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
@@ -292,10 +302,6 @@ public class SmartContractAction {
     }
 
     private BigInteger getCurrentGasLimit(Web3j web3j) throws IOException {
-        EthBlock ethBlock = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).send();
-        EthBlock.Block latestBlock = ethBlock.getBlock();
-        BigInteger currentGasLimit = latestBlock.getGasLimit();
-        logger.info("current gas limit: " + currentGasLimit);
-        return currentGasLimit;
+        return new BigInteger("10000000");
     }
 }

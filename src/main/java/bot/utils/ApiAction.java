@@ -34,7 +34,7 @@ import okhttp3.Response;
 public class ApiAction {
 	private static final Logger logger = LogManager.getLogger(ApiAction.class);
 
-    public List<TradeHistory> getGodTradeHistories(int lastBlockNo) throws IOException {
+    public List<TradeHistory> getGodTradeHistories(int lastBlockNo) throws IOException, InterruptedException {
         OkHttpClient client = new OkHttpClient();
         List<String> godAccounts = new ArrayList<String>();
         
@@ -67,6 +67,7 @@ public class ApiAction {
             String resStr = response.body().string();
             // If 'Service unavailable' error, retry one more time
 			if (resStr.contains("Service unavailable")) {
+				Thread.sleep(2000);
 				resStr = client.newCall(request).execute().body().string();
 			}
  

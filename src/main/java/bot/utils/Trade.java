@@ -100,6 +100,9 @@ public class Trade {
                 openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
                 openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("open position: " + openPositionRequest.toString());
+                
+                // create similar trade
+                scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
             } else {
                 ClosePositionRequest closePositionRequest = new ClosePositionRequest();
                 closePositionRequest.setPath(_path);
@@ -114,6 +117,9 @@ public class Trade {
                 closePositionRequest.setWithdrawETH(new Bool(false));
                 closePositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("close position: " + closePositionRequest.toString());
+                
+				// create similar trade
+				scAction.createDecreasePosition(web3j, credentials, closePositionRequest);
             }
         }
         // STEP 4: Write newest last block number to file
