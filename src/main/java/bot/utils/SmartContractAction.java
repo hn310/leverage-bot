@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -209,11 +210,17 @@ public class SmartContractAction {
         double leverage = _sizeDelta.doubleValue() / _collateralDelta.doubleValue();
         logger.info("leverage: " + leverage);
         BigDecimal _amountIn = new BigDecimal(amountIn.getValue());
-        return new Uint256(BigDecimal.valueOf(_amountIn.doubleValue() * leverage).toBigInteger());
+		BigInteger temp = BigDecimal.valueOf(_amountIn.doubleValue() * leverage).toBigInteger();
+		Uint256 calculatedSizeDelate = new Uint256(temp.multiply(new BigInteger("10").pow(24))); // sizeDelta: 30 decimals, collateralDelta: 6 decimals => 30-6 = 24
+		logger.info("calculatedSizeDelta: " + calculatedSizeDelate.getValue().toString());
+		return calculatedSizeDelate;
     }
 
     @SuppressWarnings({ "rawtypes", "deprecation" })
 	public void createIncreasePosition(Web3j web3j, Credentials credentials, OpenPositionRequest openPositionRequest) throws InterruptedException, ExecutionException, IOException {
+    	// require(msg.value == _executionFee, "val");
+    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j).getValue(); 
+    	
     	// inputs
     	List<Type> inputs = new ArrayList<Type>();
     	List<Address> path = openPositionRequest.getPath();
@@ -238,7 +245,7 @@ public class SmartContractAction {
         String encodedFunction = FunctionEncoder.encode(function);
         BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getTransactionCount();
         RawTransaction rawTransaction = RawTransaction.createTransaction(nonce,
-				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
+				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS, msg_value,
 				encodedFunction);
 		// Sign and send the transaction
 		byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
@@ -248,14 +255,22 @@ public class SmartContractAction {
 			logger.error(ethSendTransaction.getError().getMessage());
 		}
 		String transactionHash = ethSendTransaction.getTransactionHash();
+		logger.info("transactionHash: " + transactionHash);
 
         // wait for response using EthGetTransactionReceipt
         EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
-        logger.info("transactionHash: " + transactionHash + ", createIncreasePosition status: " + receipt.getResult().getStatus());
+        logger.info("createIncreasePosition status: " + receipt.getResult().getStatus());
     }
     
     @SuppressWarnings("rawtypes")
 	public void createDecreasePosition(Web3j web3j, Credentials credentials, ClosePositionRequest closePositionRequest) throws InterruptedException, ExecutionException, IOException {
+		if (closePositionRequest.getSizeDelta().getValue().intValue() == 0) {
+			return; // case when start program, user have already open a position
+		}
+    	
+    	// require(msg.value == _executionFee, "val");
+    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j).getValue(); 
+
 		// inputs
 		List<Type> inputs = new ArrayList<Type>();
 		List<Address> path = closePositionRequest.getPath();
@@ -279,19 +294,46 @@ public class SmartContractAction {
 		Function function = new Function("createDecreasePosition", inputs, outputs);
 
 		String encodedFunction = FunctionEncoder.encode(function);
-		BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getTransactionCount();
-		RawTransaction rawTransaction = RawTransaction.createTransaction(nonce,
-				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS,
-				encodedFunction);
+		BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST)
+				.send().getTransactionCount();
+		RawTransaction rawTransaction = RawTransaction.createTransaction(nonce, getCurrentGasPrice(web3j),
+				getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS, msg_value, encodedFunction);
 		// Sign and send the transaction
 		byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
 		String hexValue = Numeric.toHexString(signedMessage);
 		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+		if (ethSendTransaction.hasError()) {
+			logger.error(ethSendTransaction.getError().getMessage());
+		}
 		String transactionHash = ethSendTransaction.getTransactionHash();
+		logger.info("transactionHash: " + transactionHash);
 
 		// wait for response using EthGetTransactionReceipt
 		EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
-		logger.info("transactionHash: " + transactionHash + ", createDecreasePosition status: " + receipt.getResult().getStatus());
+		logger.info("createDecreasePosition status: " + receipt.getResult().getStatus());
+	}
+    
+	public Uint256 getMinExecutionFee(Web3j web3j) throws IOException {
+		List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
+		TypeReference<Uint256> size = new TypeReference<Uint256>() {
+		};
+		outputs.add(size);
+
+		Function function = new Function("minExecutionFee", // Function name
+				Arrays.asList(), outputs); // Function returned parameters
+
+		String encodedFunction = FunctionEncoder.encode(function);
+		EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.SELF_ADDRESS,
+				GMXConstant.POSITION_ROUTER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
+
+		List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
+		if (response.size() > 0) {
+			Uint256 minExecutionFee = new Uint256(new BigInteger(response.get(0).getValue().toString()));
+			logger.info("minExecutionFee: " + minExecutionFee.getValue().toString());
+			return minExecutionFee;
+		} else {
+			return GMXConstant.EXECUTION_FEE; // fallback
+		}
 	}
 
     private BigInteger getCurrentGasPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {

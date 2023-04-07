@@ -64,8 +64,9 @@ public class Trade {
                     _path.add(new Address(GMXConstant.USDC_ADDRESS));
                     _path.add(new Address(indexToken));
                 } else {
-                    // decrease long: path[BTC]
+                    // decrease long: path[BTC, USDC]
                     _path.add(new Address(indexToken));
+                    _path.add(new Address(GMXConstant.USDC_ADDRESS));
                 }
             } else {
                 // increase/decrease short: path[USDC] only
@@ -96,7 +97,7 @@ public class Trade {
                 openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
                 openPositionRequest.setIsLong(new Bool(isLong));
                 openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
-                openPositionRequest.setExecutionFee(GMXConstant.EXECUTION_FEE);
+                openPositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j));
                 openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
                 openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("open position: " + openPositionRequest.toString());
@@ -113,7 +114,7 @@ public class Trade {
                 closePositionRequest.setReceiver(new Address(AccConstant.SELF_ADDRESS));
                 closePositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
                 closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
-                closePositionRequest.setExecutionFee(GMXConstant.EXECUTION_FEE);
+                closePositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j));
                 closePositionRequest.setWithdrawETH(new Bool(false));
                 closePositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("close position: " + closePositionRequest.toString());

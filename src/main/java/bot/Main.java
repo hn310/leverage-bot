@@ -2,12 +2,17 @@ package bot;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Bool;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -15,8 +20,12 @@ import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.protocol.http.HttpService;
 
 import bot.constant.AccConstant;
+import bot.constant.GMXConstant;
 import bot.constant.RPCConstant;
+import bot.model.ClosePositionRequest;
+import bot.model.OpenPositionRequest;
 import bot.utils.ApiAction;
+import bot.utils.SmartContractAction;
 import bot.utils.Trade;
 
 public class Main {
@@ -51,9 +60,45 @@ public class Main {
 				try {
 					trade.startTrade(web3j, credentials);
 				} catch (Exception e) {
-					e.printStackTrace();
+					logger.error(e);
 				}
 			}
-		}, 0, 120000);
+		}, 0, 30000); // pooling 30s
+	}
+
+	public void test(Web3j web3j, Credentials credentials)
+			throws IOException, InterruptedException, ExecutionException {
+		OpenPositionRequest openPositionRequest = new OpenPositionRequest();
+		openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger("27599689000000000000000000000000000")));
+		openPositionRequest.setAmountIn(GMXConstant.AMOUNT_IN);
+		openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
+		Uint256 executionFee = new SmartContractAction().getMinExecutionFee(web3j);
+		openPositionRequest.setExecutionFee(executionFee);
+		openPositionRequest.setIndexToken(new Address(GMXConstant.WBTC_ADDRESS));
+		openPositionRequest.setIsLong(new Bool(false));
+		openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
+		List<Address> path = new ArrayList<Address>();
+		path.add(new Address(GMXConstant.USDC_ADDRESS));
+		path.add(new Address(GMXConstant.WBTC_ADDRESS));
+		openPositionRequest.setPath(path);
+		openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
+		openPositionRequest.setSizeDelta(new Uint256(new BigInteger("13728571428571428560452558100000")));
+		new SmartContractAction().createIncreasePosition(web3j, credentials, openPositionRequest);
+
+		ClosePositionRequest closePositionRequest = new ClosePositionRequest();
+		List<Address> pathS = new ArrayList<Address>();
+		pathS.add(new Address(GMXConstant.WBTC_ADDRESS));
+		closePositionRequest.setPath(pathS);
+		closePositionRequest.setIndexToken(new Address(GMXConstant.WBTC_ADDRESS));
+		closePositionRequest.setCollateralDelta(GMXConstant.MIN_OUT);
+		closePositionRequest.setSizeDelta(new Uint256(new BigInteger("13728571428571428560452558100000")));
+		closePositionRequest.setIsLong(new Bool(true));
+		closePositionRequest.setReceiver(new Address(AccConstant.SELF_ADDRESS));
+		closePositionRequest.setAcceptablePrice(new Uint256(new BigInteger("27819689000000000000000000000000000")));
+		closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
+		closePositionRequest.setExecutionFee(executionFee);
+		closePositionRequest.setWithdrawETH(new Bool(false));
+		closePositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
+		new SmartContractAction().createDecreasePosition(web3j, credentials, closePositionRequest);
 	}
 }

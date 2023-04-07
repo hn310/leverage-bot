@@ -40,17 +40,17 @@ public class ApiAction {
         
         // TODO delete when production
         godAccounts.add(AccConstant.GOD_KEY);
-        godAccounts.add(AccConstant.GOD_KEY_1);
-        godAccounts.add(AccConstant.GOD_KEY_1);
-        godAccounts.add(AccConstant.GOD_KEY_2);
-        godAccounts.add(AccConstant.GOD_KEY_3);
-        godAccounts.add(AccConstant.GOD_KEY_4);
-        godAccounts.add(AccConstant.GOD_KEY_5);
-        godAccounts.add(AccConstant.GOD_KEY_6);
-        godAccounts.add(AccConstant.GOD_KEY_7);
-        godAccounts.add(AccConstant.GOD_KEY_8);
-        godAccounts.add(AccConstant.GOD_KEY_9);
-        godAccounts.add(AccConstant.GOD_KEY_10);
+//        godAccounts.add(AccConstant.GOD_KEY_1);
+//        godAccounts.add(AccConstant.GOD_KEY_1);
+//        godAccounts.add(AccConstant.GOD_KEY_2);
+//        godAccounts.add(AccConstant.GOD_KEY_3);
+//        godAccounts.add(AccConstant.GOD_KEY_4);
+//        godAccounts.add(AccConstant.GOD_KEY_5);
+//        godAccounts.add(AccConstant.GOD_KEY_6);
+//        godAccounts.add(AccConstant.GOD_KEY_7);
+//        godAccounts.add(AccConstant.GOD_KEY_8);
+//        godAccounts.add(AccConstant.GOD_KEY_9);
+//        godAccounts.add(AccConstant.GOD_KEY_10);
         
         List<TradeHistory> filteredTradeHistories = new ArrayList<TradeHistory>();
         
