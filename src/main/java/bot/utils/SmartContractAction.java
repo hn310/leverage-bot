@@ -32,6 +32,7 @@ import org.web3j.protocol.core.methods.response.EthGasPrice;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.utils.Numeric;
 
@@ -257,9 +258,16 @@ public class SmartContractAction {
 		String transactionHash = ethSendTransaction.getTransactionHash();
 		logger.info("transactionHash: " + transactionHash);
 
-        // wait for response using EthGetTransactionReceipt
-        EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
-        logger.info("createIncreasePosition status: " + receipt.getResult().getStatus());
+		// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
+		TransactionReceipt txReceipt = null;
+		while (txReceipt == null) {
+			EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
+			if (ethGetReceipt.getResult() != null) {
+				txReceipt = ethGetReceipt.getTransactionReceipt().get();
+			}
+			Thread.sleep(1000); // wait for 1 second before checking again
+		}
+		logger.info("createIncreasePosition status: " + txReceipt.getStatus());
     }
     
     @SuppressWarnings("rawtypes")
@@ -308,9 +316,16 @@ public class SmartContractAction {
 		String transactionHash = ethSendTransaction.getTransactionHash();
 		logger.info("transactionHash: " + transactionHash);
 
-		// wait for response using EthGetTransactionReceipt
-		EthGetTransactionReceipt receipt = web3j.ethGetTransactionReceipt(transactionHash).send();
-		logger.info("createDecreasePosition status: " + receipt.getResult().getStatus());
+		// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
+		TransactionReceipt txReceipt = null;
+		while (txReceipt == null) {
+			EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
+			if (ethGetReceipt.getResult() != null) {
+				txReceipt = ethGetReceipt.getTransactionReceipt().get();
+			}
+			Thread.sleep(1000); // wait for 1 second before checking again
+		}
+		logger.info("createDecreasePosition status: " + txReceipt.getStatus());
 	}
     
 	public Uint256 getMinExecutionFee(Web3j web3j, Credentials credentials) throws IOException {
