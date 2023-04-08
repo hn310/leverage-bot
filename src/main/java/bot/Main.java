@@ -38,7 +38,7 @@ public class Main {
 		Web3j web3j = Web3j.build(new HttpService(RPCConstant.ARBITRUM_ONE_RPC));
 
 		// Load the credentials for the sender account
-		Credentials credentials = Credentials.create(AccConstant.PRIVATE_KEY);
+		Credentials credentials = Credentials.create(AccConstant.GMX_1_KEY);
 
 		// start with the latest block whenever start program to avoid old trades
 		BigInteger latestBlock = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).send().getBlock()
@@ -72,7 +72,7 @@ public class Main {
 		openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger("27599689000000000000000000000000000")));
 		openPositionRequest.setAmountIn(GMXConstant.AMOUNT_IN);
 		openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
-		Uint256 executionFee = new SmartContractAction().getMinExecutionFee(web3j);
+		Uint256 executionFee = new SmartContractAction().getMinExecutionFee(web3j, credentials);
 		openPositionRequest.setExecutionFee(executionFee);
 		openPositionRequest.setIndexToken(new Address(GMXConstant.WBTC_ADDRESS));
 		openPositionRequest.setIsLong(new Bool(false));
@@ -93,7 +93,7 @@ public class Main {
 		closePositionRequest.setCollateralDelta(GMXConstant.MIN_OUT);
 		closePositionRequest.setSizeDelta(new Uint256(new BigInteger("13728571428571428560452558100000")));
 		closePositionRequest.setIsLong(new Bool(true));
-		closePositionRequest.setReceiver(new Address(AccConstant.SELF_ADDRESS));
+		closePositionRequest.setReceiver(new Address(credentials.getAddress()));
 		closePositionRequest.setAcceptablePrice(new Uint256(new BigInteger("27819689000000000000000000000000000")));
 		closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
 		closePositionRequest.setExecutionFee(executionFee);

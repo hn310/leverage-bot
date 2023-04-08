@@ -83,7 +83,7 @@ public class Trade {
             // If decrease position: collateralDelta = 0, sizeDelta = getFromSmartContract
             else {
                 _collateralDelta = new Uint256(0);
-                PositionResponse ps = this.scAction.getPosition(web3j, new Address(AccConstant.SELF_ADDRESS),
+                PositionResponse ps = this.scAction.getPosition(web3j, new Address(credentials.getAddress()),
                         new Address(collateralToken), new Address(indexToken), new Bool(isLong));
                 _sizeDelta = ps.getSize();
             }
@@ -97,7 +97,7 @@ public class Trade {
                 openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
                 openPositionRequest.setIsLong(new Bool(isLong));
                 openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
-                openPositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j));
+                openPositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j, credentials));
                 openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
                 openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("open position: " + openPositionRequest.toString());
@@ -111,10 +111,10 @@ public class Trade {
                 closePositionRequest.setCollateralDelta(_collateralDelta);
                 closePositionRequest.setSizeDelta(_sizeDelta);
                 closePositionRequest.setIsLong(new Bool(isLong));
-                closePositionRequest.setReceiver(new Address(AccConstant.SELF_ADDRESS));
+                closePositionRequest.setReceiver(new Address(credentials.getAddress()));
                 closePositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
                 closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
-                closePositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j));
+                closePositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j, credentials));
                 closePositionRequest.setWithdrawETH(new Bool(false));
                 closePositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("close position: " + closePositionRequest.toString());

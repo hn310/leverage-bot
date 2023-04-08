@@ -44,8 +44,8 @@ import bot.model.PositionResponse;
 public class SmartContractAction {
     private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
 
-    public double getBalanceInEth(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
-        EthGetBalance ethGetBalance = web3j.ethGetBalance(AccConstant.SELF_ADDRESS, DefaultBlockParameterName.LATEST).send();
+    public double getBalanceInEth(Web3j web3j, Credentials credentials) throws InterruptedException, ExecutionException, IOException {
+        EthGetBalance ethGetBalance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
 
         BigInteger wei = ethGetBalance.getBalance();
         return wei.doubleValue() / Math.pow(10, 18);
@@ -219,7 +219,7 @@ public class SmartContractAction {
     @SuppressWarnings({ "rawtypes", "deprecation" })
 	public void createIncreasePosition(Web3j web3j, Credentials credentials, OpenPositionRequest openPositionRequest) throws InterruptedException, ExecutionException, IOException {
     	// require(msg.value == _executionFee, "val");
-    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j).getValue(); 
+    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j, credentials).getValue(); 
     	
     	// inputs
     	List<Type> inputs = new ArrayList<Type>();
@@ -269,7 +269,7 @@ public class SmartContractAction {
 		}
     	
     	// require(msg.value == _executionFee, "val");
-    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j).getValue(); 
+    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j, credentials).getValue(); 
 
 		// inputs
 		List<Type> inputs = new ArrayList<Type>();
@@ -313,7 +313,7 @@ public class SmartContractAction {
 		logger.info("createDecreasePosition status: " + receipt.getResult().getStatus());
 	}
     
-	public Uint256 getMinExecutionFee(Web3j web3j) throws IOException {
+	public Uint256 getMinExecutionFee(Web3j web3j, Credentials credentials) throws IOException {
 		List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
 		TypeReference<Uint256> size = new TypeReference<Uint256>() {
 		};
@@ -323,7 +323,7 @@ public class SmartContractAction {
 				Arrays.asList(), outputs); // Function returned parameters
 
 		String encodedFunction = FunctionEncoder.encode(function);
-		EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.SELF_ADDRESS,
+		EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(credentials.getAddress(),
 				GMXConstant.POSITION_ROUTER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
 
 		List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
