@@ -36,4 +36,5 @@ public class GMXConstant {
     public static Bytes32 REFERRAL_CODE = new Bytes32(
             Numeric.hexStringToByteArray("0x0000000000000000000000000000000000000000000000000000000000000000")) ;
     public static Address CALLBACK_TARGET = new Address("0x0000000000000000000000000000000000000000");
+    public static double SLIPPAGE = 1.005; // 0.5%
 }

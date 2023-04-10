@@ -1,6 +1,7 @@
 package bot.utils;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +15,12 @@ import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 
-import bot.constant.AccConstant;
 import bot.constant.ActionsConstant;
 import bot.constant.GMXConstant;
-import bot.model.PositionResponse;
-import bot.model.TradeHistory;
 import bot.model.ClosePositionRequest;
 import bot.model.OpenPositionRequest;
+import bot.model.PositionResponse;
+import bot.model.TradeHistory;
 
 public class Trade {
     private static final Logger logger = LogManager.getLogger(Trade.class);
@@ -52,10 +52,10 @@ public class Trade {
             String collateralDelta = th.getTradeHistoryData().getParams().getCollateralDelta(); // original USD
             String sizeDelta = th.getTradeHistoryData().getParams().getSizeDelta(); // multiplied (after margin) USD
             boolean isLong = th.getTradeHistoryData().getParams().isLong();
-            // the USD value of the max (for longs) or min (for shorts) index price
-            // acceptable when executing the request
-            String acceptablePrice = th.getTradeHistoryData().getParams().getPrice();
 
+            // convert current BTC/ETH price to acceptable price
+            BigInteger acceptablePrice = calculateAcceptablePrice(th);
+            
             // STEP 3: Create similar position
             List<Address> _path = new ArrayList<Address>();
             if (th.getTradeHistoryData().getParams().isLong()) {
@@ -94,13 +94,13 @@ public class Trade {
                 openPositionRequest.setIndexToken(new Address(indexToken));
                 openPositionRequest.setAmountIn(_collateralDelta);
                 openPositionRequest.setSizeDelta(_sizeDelta);
-                openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
+                openPositionRequest.setAcceptablePrice(new Uint256(acceptablePrice));
                 openPositionRequest.setIsLong(new Bool(isLong));
                 openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
                 openPositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j, credentials));
                 openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
                 openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
-                logger.info("open position: " + openPositionRequest.toString());
+                logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | open position: " + openPositionRequest.toString());
                 
                 // create similar trade
                 scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
@@ -112,12 +112,12 @@ public class Trade {
                 closePositionRequest.setSizeDelta(_sizeDelta);
                 closePositionRequest.setIsLong(new Bool(isLong));
                 closePositionRequest.setReceiver(new Address(credentials.getAddress()));
-                closePositionRequest.setAcceptablePrice(new Uint256(new BigInteger(acceptablePrice)));
+                closePositionRequest.setAcceptablePrice(new Uint256(acceptablePrice));
                 closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
                 closePositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j, credentials));
                 closePositionRequest.setWithdrawETH(new Bool(false));
                 closePositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
-                logger.info("close position: " + closePositionRequest.toString());
+                logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | close position: " + closePositionRequest.toString());
                 
 				// create similar trade
 				scAction.createDecreasePosition(web3j, credentials, closePositionRequest);
@@ -129,4 +129,31 @@ public class Trade {
         // TODO uncomment this
         this.apiAction.writeLastBlockNo(lastBlockNo); // write latest block number to file
     }
+    
+	private BigInteger calculateAcceptablePrice(TradeHistory th) {
+		BigInteger acceptablePrice = new BigInteger("0");
+		BigInteger price = new BigInteger(th.getTradeHistoryData().getParams().getPrice());
+		if (th.getTradeHistoryData().getParams().isLong()) {
+			if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)) {
+				// Increase long: acceptablePrice = price * 1.005 (Acceptable Price < 1,840.41)
+				double tmp = price.doubleValue() * GMXConstant.SLIPPAGE;
+				acceptablePrice = BigDecimal.valueOf(tmp).toBigInteger();
+			} else {
+				// Decrease long: acceptablePrice = price / 1.005 (Acceptable Price > 1,860.48)
+				double tmp = price.doubleValue() / GMXConstant.SLIPPAGE;
+				acceptablePrice = BigDecimal.valueOf(tmp).toBigInteger();
+			}
+		} else {
+			if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)) {
+				// Increase short: acceptablePrice = price / 1.005 (Acceptable Price >1,860.48)
+				double tmp = price.doubleValue() / GMXConstant.SLIPPAGE;
+				acceptablePrice = BigDecimal.valueOf(tmp).toBigInteger();
+			} else {
+				// Decrease short: acceptablePrice = price * 1.005 (Acceptable Price < 1,840.41)
+				double tmp = price.doubleValue() * GMXConstant.SLIPPAGE;
+				acceptablePrice = BigDecimal.valueOf(tmp).toBigInteger();
+			}
+		}
+		return acceptablePrice;
+	}
 }
