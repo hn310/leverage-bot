@@ -30,15 +30,28 @@ import bot.utils.Trade;
 
 public class Main {
 	private static final Logger logger = LogManager.getLogger(Main.class);
+	
+	private static Credentials credentials = null;
+	private static String godAccount = null;
 
 	public static void main(String[] args)
 			throws InterruptedException, ExecutionException, IOException, TransactionException {
 
 		// Connect to Ethereum client using web3j
 		Web3j web3j = Web3j.build(new HttpService(RPCConstant.ARBITRUM_ONE_RPC));
-
-		// Load the credentials for the sender account
-		Credentials credentials = Credentials.create(AccConstant.GMX_1_KEY);
+		
+		new SmartContractAction().getMinExecutionFee(web3j);
+		
+		if ("1".equals(args[0])) {
+			 credentials = Credentials.create(AccConstant.GMX_1_KEY);
+			 godAccount = AccConstant.GOD_KEY_1;
+		} else if ("2".equals(args[0])) {
+			 credentials = Credentials.create(AccConstant.GMX_2_KEY);
+			 godAccount = AccConstant.GOD_KEY_2;
+		} else if ("3".equals(args[0])) {
+			 credentials = Credentials.create(AccConstant.GMX_3_KEY);
+			 godAccount = AccConstant.GOD_KEY_3;
+		}
 
 		// start with the latest block whenever start program to avoid old trades
 		BigInteger latestBlock = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).send().getBlock()
@@ -48,22 +61,19 @@ public class Main {
 		logger.info("Start program!! Latest block: " + latestBlock.intValueExact());
 
 		Trade trade = new Trade();
-
-		// TODO delete this when release to prod
-//        trade.startTrade(web3j, credentials);
-
+		
 		// TODO uncomment this
 		Timer t = new Timer();
 		t.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				try {
-					trade.startTrade(web3j, credentials);
+					trade.startTrade(web3j, credentials, godAccount);
 				} catch (Exception e) {
 					logger.error(e);
 				}
 			}
-		}, 0, 30000); // pooling 30s
+		}, 0, 3000); // pooling 3s
 	}
 
 	public void test(Web3j web3j, Credentials credentials)
@@ -72,7 +82,7 @@ public class Main {
 		openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger("27599689000000000000000000000000000")));
 		openPositionRequest.setAmountIn(GMXConstant.AMOUNT_IN);
 		openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
-		Uint256 executionFee = new SmartContractAction().getMinExecutionFee(web3j, credentials);
+		Uint256 executionFee = new SmartContractAction().getMinExecutionFee(web3j);
 		openPositionRequest.setExecutionFee(executionFee);
 		openPositionRequest.setIndexToken(new Address(GMXConstant.WBTC_ADDRESS));
 		openPositionRequest.setIsLong(new Bool(false));

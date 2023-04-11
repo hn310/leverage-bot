@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import bot.constant.AccConstant;
 import bot.constant.ActionsConstant;
 import bot.constant.GMXConstant;
 import bot.constant.MiscConstant;
@@ -34,65 +33,43 @@ import okhttp3.Response;
 public class ApiAction {
 	private static final Logger logger = LogManager.getLogger(ApiAction.class);
 
-    public List<TradeHistory> getGodTradeHistories(int lastBlockNo) throws IOException, InterruptedException {
+    public List<TradeHistory> getGodTradeHistories(int lastBlockNo, String godAccount) throws IOException, InterruptedException {
         OkHttpClient client = new OkHttpClient();
-        List<String> godAccounts = new ArrayList<String>();
         
-        // TODO delete when production
-        godAccounts.add(AccConstant.GOD_KEY);
-//        godAccounts.add(AccConstant.GOD_KEY_1);
-//        godAccounts.add(AccConstant.GOD_KEY_1);
-//        godAccounts.add(AccConstant.GOD_KEY_2);
-//        godAccounts.add(AccConstant.GOD_KEY_3);
-//        godAccounts.add(AccConstant.GOD_KEY_4);
-//        godAccounts.add(AccConstant.GOD_KEY_5);
-//        godAccounts.add(AccConstant.GOD_KEY_6);
-//        godAccounts.add(AccConstant.GOD_KEY_7);
-//        godAccounts.add(AccConstant.GOD_KEY_8);
-//        godAccounts.add(AccConstant.GOD_KEY_9);
-//        godAccounts.add(AccConstant.GOD_KEY_10);
-        
-        List<TradeHistory> filteredTradeHistories = new ArrayList<TradeHistory>();
-        
-        for (String account: godAccounts) {
-        	HttpUrl.Builder urlBuilder = HttpUrl.parse(GMXConstant.GMX_ACTIONS_URL).newBuilder();
-            urlBuilder.addQueryParameter("account", account);
-            String url = urlBuilder.build().toString();
+		List<TradeHistory> filteredTradeHistories = new ArrayList<TradeHistory>();
 
-            Request request = new Request.Builder().url(url).build();
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(GMXConstant.GMX_ACTIONS_URL).newBuilder();
+		urlBuilder.addQueryParameter("account", godAccount);
+		String url = urlBuilder.build().toString();
 
-            Call call = client.newCall(request);
-            Response response = call.execute();
+		Request request = new Request.Builder().url(url).build();
 
-            String resStr = response.body().string();
-            // If 'Service unavailable' error, retry one more time
-			if (resStr.contains("Service unavailable")) {
-				Thread.sleep(2000);
-				resStr = client.newCall(request).execute().body().string();
+		Call call = client.newCall(request);
+		Response response = call.execute();
+
+		String resStr = response.body().string();
+
+		Gson gson = new Gson();
+		String sanitizedRes = resStr.replaceAll("\"\\{", "{").replaceAll("}\"", "}").replaceAll("\\\\", "");
+		List<TradeHistory> godTradeHistories = new ArrayList<TradeHistory>();
+		try {
+			godTradeHistories = gson.fromJson(sanitizedRes, new TypeToken<List<TradeHistory>>() {
+			}.getType());
+		} catch (Exception e) {
+			logger.error(e);
+			logger.error("resStr: " + resStr);
+			logger.error("sanitizedRes: " + sanitizedRes);
+		}
+
+		for (TradeHistory th : godTradeHistories) {
+			if (th.getTradeHistoryData().getBlockNumber() > lastBlockNo) {
+				// open/close only success if below actions are called -> ignore other actions
+				if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)
+						|| th.getTradeHistoryData().getAction().startsWith(ActionsConstant.DECREASE_POSITION)) {
+					filteredTradeHistories.add(th);
+				}
 			}
- 
-            Gson gson = new Gson();
-            String sanitizedRes = resStr.replaceAll("\"\\{", "{").replaceAll("}\"", "}").replaceAll("\\\\", "");
-            List<TradeHistory> godTradeHistories = new ArrayList<TradeHistory>();
-            try {
-            	godTradeHistories = gson.fromJson(sanitizedRes, new TypeToken<List<TradeHistory>>() {
-                }.getType());
-    		} catch (Exception e) {
-    			logger.error(e);
-    			logger.error("resStr: " + resStr);
-    			logger.error("sanitizedRes: " + sanitizedRes);
-    		}
-    		
-    		for (TradeHistory th : godTradeHistories) {
-    			if (th.getTradeHistoryData().getBlockNumber() > lastBlockNo) {
-    				// open/close only success if below actions are called -> ignore other actions
-                    if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)
-                            || th.getTradeHistoryData().getAction().startsWith(ActionsConstant.DECREASE_POSITION)) {
-                        filteredTradeHistories.add(th);
-                    }
-                }
-            }
-        }
+		}
         
         // remove duplicated trade histories due to call API sometimes return duplicated trade histories
         Set<String> seenTradeIds = new HashSet<>();

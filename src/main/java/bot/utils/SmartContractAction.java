@@ -36,7 +36,6 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import org.web3j.utils.Numeric;
 
-import bot.constant.AccConstant;
 import bot.constant.GMXConstant;
 import bot.model.ClosePositionRequest;
 import bot.model.OpenPositionRequest;
@@ -63,7 +62,7 @@ public class SmartContractAction {
                 Collections.singletonList(new Bool(true)), outputs); // Function returned parameters
 
         String encodedFunction = FunctionEncoder.encode(function);
-        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.GLP_MANAGER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST)
+        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(null, GMXConstant.GLP_MANAGER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST)
                 .send();
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
@@ -73,14 +72,14 @@ public class SmartContractAction {
     }
 
     @SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
-    public List<Type> getPositions(Web3j web3j) throws IOException, TransactionException, InterruptedException, ExecutionException {
+    public List<Type> getPositions(Web3j web3j, String godAccount) throws IOException, TransactionException, InterruptedException, ExecutionException {
         int collateralTokensNumber = 0;
 
         List<Type> inputs = new ArrayList<Type>();
         // vault contract address
         inputs.add(new Address(GMXConstant.VAULT_ADDRESS));
         // account of the user
-        inputs.add(new Address(AccConstant.GOD_KEY));
+        inputs.add(new Address(godAccount));
         // array of collateralTokens
         List<Address> collateralTokens = new ArrayList<Address>();
         collateralTokens.add(new Address(GMXConstant.WBTC_ADDRESS));
@@ -148,7 +147,7 @@ public class SmartContractAction {
                 inputs, outputs); // Function returned parameters
 
         String encodedFunction = FunctionEncoder.encode(function);
-        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.READER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
+        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(null, GMXConstant.READER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
         return response;
@@ -181,7 +180,7 @@ public class SmartContractAction {
                 inputs, outputs); // Function returned parameters
 
         String encodedFunction = FunctionEncoder.encode(function);
-        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(AccConstant.GOD_KEY, GMXConstant.VAULT_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
+        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(null, GMXConstant.VAULT_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
         if (response.size() > 0) {
@@ -220,7 +219,7 @@ public class SmartContractAction {
     @SuppressWarnings({ "rawtypes", "deprecation" })
 	public void createIncreasePosition(Web3j web3j, Credentials credentials, OpenPositionRequest openPositionRequest) throws InterruptedException, ExecutionException, IOException {
     	// require(msg.value == _executionFee, "val");
-    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j, credentials).getValue(); 
+    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j).getValue(); 
     	
     	// inputs
     	List<Type> inputs = new ArrayList<Type>();
@@ -277,7 +276,7 @@ public class SmartContractAction {
 		}
     	
     	// require(msg.value == _executionFee, "val");
-    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j, credentials).getValue(); 
+    	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j).getValue(); 
 
 		// inputs
 		List<Type> inputs = new ArrayList<Type>();
@@ -328,7 +327,7 @@ public class SmartContractAction {
 		logger.info("createDecreasePosition status: " + txReceipt.getStatus());
 	}
     
-	public Uint256 getMinExecutionFee(Web3j web3j, Credentials credentials) throws IOException {
+	public Uint256 getMinExecutionFee(Web3j web3j) throws IOException {
 		List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
 		TypeReference<Uint256> size = new TypeReference<Uint256>() {
 		};
@@ -338,13 +337,12 @@ public class SmartContractAction {
 				Arrays.asList(), outputs); // Function returned parameters
 
 		String encodedFunction = FunctionEncoder.encode(function);
-		EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(credentials.getAddress(),
+		EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(null,
 				GMXConstant.POSITION_ROUTER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
 
 		List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
 		if (response.size() > 0) {
 			Uint256 minExecutionFee = new Uint256(new BigInteger(response.get(0).getValue().toString()));
-			logger.info("minExecutionFee: " + minExecutionFee.getValue().toString());
 			return minExecutionFee;
 		} else {
 			return GMXConstant.EXECUTION_FEE; // fallback
@@ -354,7 +352,6 @@ public class SmartContractAction {
     private BigInteger getCurrentGasPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
         EthGasPrice ethGasPrice = web3j.ethGasPrice().send();
         BigInteger currentGasPrice = ethGasPrice.getGasPrice();
-        logger.info("current gas price: " + currentGasPrice);
         return currentGasPrice;
     }
 

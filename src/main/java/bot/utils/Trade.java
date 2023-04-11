@@ -28,13 +28,13 @@ public class Trade {
     ApiAction apiAction = new ApiAction();
     SmartContractAction scAction = new SmartContractAction();
 
-    public void startTrade(Web3j web3j, Credentials credentials) throws IOException, InterruptedException, ExecutionException {
+    public void startTrade(Web3j web3j, Credentials credentials, String godAccount) throws IOException, InterruptedException, ExecutionException {
         // STEP 0: Get last processed block No
         int lastBlockNo = this.apiAction.readLastBlockNo();
 
         // STEP 1: Detect IncreasePosition(open) or DecreasePosition(close) by call API
         // actions (compare with block number from step 4)
-        List<TradeHistory> tradeHistories = this.apiAction.getGodTradeHistories(lastBlockNo);
+        List<TradeHistory> tradeHistories = this.apiAction.getGodTradeHistories(lastBlockNo, godAccount);
         if (tradeHistories.size() == 0) {
             logger.info("No new positions found!");
             return;
@@ -97,7 +97,7 @@ public class Trade {
                 openPositionRequest.setAcceptablePrice(new Uint256(acceptablePrice));
                 openPositionRequest.setIsLong(new Bool(isLong));
                 openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
-                openPositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j, credentials));
+                openPositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j));
                 openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
                 openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | open position: " + openPositionRequest.toString());
@@ -114,7 +114,7 @@ public class Trade {
                 closePositionRequest.setReceiver(new Address(credentials.getAddress()));
                 closePositionRequest.setAcceptablePrice(new Uint256(acceptablePrice));
                 closePositionRequest.setMinOut(GMXConstant.MIN_OUT);
-                closePositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j, credentials));
+                closePositionRequest.setExecutionFee(new SmartContractAction().getMinExecutionFee(web3j));
                 closePositionRequest.setWithdrawETH(new Bool(false));
                 closePositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
                 logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | close position: " + closePositionRequest.toString());
