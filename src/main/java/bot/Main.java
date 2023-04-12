@@ -40,8 +40,6 @@ public class Main {
 		// Connect to Ethereum client using web3j
 		Web3j web3j = Web3j.build(new HttpService(RPCConstant.ARBITRUM_ONE_RPC));
 		
-		new SmartContractAction().getMinExecutionFee(web3j);
-		
 		if ("1".equals(args[0])) {
 			 credentials = Credentials.create(AccConstant.GMX_1_KEY);
 			 godAccount = AccConstant.GOD_KEY_1;

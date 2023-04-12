@@ -252,21 +252,23 @@ public class SmartContractAction {
 		String hexValue = Numeric.toHexString(signedMessage);
 		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 		if (ethSendTransaction.hasError()) {
-			logger.error(ethSendTransaction.getError().getMessage());
-		}
-		String transactionHash = ethSendTransaction.getTransactionHash();
-		logger.info("transactionHash: " + transactionHash);
+			logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
+		} else {
+			// otherwise when error, will be looped forever
+			String transactionHash = ethSendTransaction.getTransactionHash();
+			logger.info("transactionHash: " + transactionHash);
 
-		// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
-		TransactionReceipt txReceipt = null;
-		while (txReceipt == null) {
-			EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
-			if (ethGetReceipt.getResult() != null) {
-				txReceipt = ethGetReceipt.getTransactionReceipt().get();
+			// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
+			TransactionReceipt txReceipt = null;
+			while (txReceipt == null) {
+				EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
+				if (ethGetReceipt.getResult() != null) {
+					txReceipt = ethGetReceipt.getTransactionReceipt().get();
+				}
+				Thread.sleep(1000); // wait for 1 second before checking again
 			}
-			Thread.sleep(1000); // wait for 1 second before checking again
+			logger.info("createIncreasePosition status: " + txReceipt.getStatus());
 		}
-		logger.info("createIncreasePosition status: " + txReceipt.getStatus());
     }
     
     @SuppressWarnings("rawtypes")
@@ -310,21 +312,23 @@ public class SmartContractAction {
 		String hexValue = Numeric.toHexString(signedMessage);
 		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 		if (ethSendTransaction.hasError()) {
-			logger.error(ethSendTransaction.getError().getMessage());
-		}
-		String transactionHash = ethSendTransaction.getTransactionHash();
-		logger.info("transactionHash: " + transactionHash);
+			logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
+		} else {
+			// otherwise when error, will be looped forever
+			String transactionHash = ethSendTransaction.getTransactionHash();
+			logger.info("transactionHash: " + transactionHash);
 
-		// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
-		TransactionReceipt txReceipt = null;
-		while (txReceipt == null) {
-			EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
-			if (ethGetReceipt.getResult() != null) {
-				txReceipt = ethGetReceipt.getTransactionReceipt().get();
+			// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
+			TransactionReceipt txReceipt = null;
+			while (txReceipt == null) {
+				EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
+				if (ethGetReceipt.getResult() != null) {
+					txReceipt = ethGetReceipt.getTransactionReceipt().get();
+				}
+				Thread.sleep(1000); // wait for 1 second before checking again
 			}
-			Thread.sleep(1000); // wait for 1 second before checking again
+			logger.info("createDecreasePosition status: " + txReceipt.getStatus());
 		}
-		logger.info("createDecreasePosition status: " + txReceipt.getStatus());
 	}
     
 	public Uint256 getMinExecutionFee(Web3j web3j) throws IOException {
