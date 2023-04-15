@@ -238,36 +238,44 @@ public class SmartContractAction {
     	// outputs
     	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
+    	
+		int retry = 0;
+		while (retry < 3) { // retry 3 times to avoid "32000 max fee per gas less than block base fee"
+			// function call
+			Function function = new Function("createIncreasePosition", inputs, outputs);
 
-    	// function call
-		Function function = new Function("createIncreasePosition", inputs, outputs);
+			String encodedFunction = FunctionEncoder.encode(function);
+			BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST)
+					.send().getTransactionCount();
+			RawTransaction rawTransaction = RawTransaction.createTransaction(nonce, getCurrentGasPrice(web3j),
+					getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS, msg_value, encodedFunction);
+			// Sign and send the transaction
+			byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
+			String hexValue = Numeric.toHexString(signedMessage);
+			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+			if (ethSendTransaction.hasError()) {
+				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
+				Thread.sleep(500); // wait 500ms before retry
+				retry++;
+			} else {
+				// otherwise when error, will be looped forever
+				String transactionHash = ethSendTransaction.getTransactionHash();
+				logger.info("transactionHash: " + transactionHash);
 
-        String encodedFunction = FunctionEncoder.encode(function);
-        BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getTransactionCount();
-        RawTransaction rawTransaction = RawTransaction.createTransaction(nonce,
-				getCurrentGasPrice(web3j), getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS, msg_value,
-				encodedFunction);
-		// Sign and send the transaction
-		byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
-		String hexValue = Numeric.toHexString(signedMessage);
-		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
-		if (ethSendTransaction.hasError()) {
-			logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-		} else {
-			// otherwise when error, will be looped forever
-			String transactionHash = ethSendTransaction.getTransactionHash();
-			logger.info("transactionHash: " + transactionHash);
-
-			// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
-			TransactionReceipt txReceipt = null;
-			while (txReceipt == null) {
-				EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
-				if (ethGetReceipt.getResult() != null) {
-					txReceipt = ethGetReceipt.getTransactionReceipt().get();
+				// transactionHash exists even if transaction is not yet confirmed so we need to
+				// wait for response
+				TransactionReceipt txReceipt = null;
+				while (txReceipt == null) {
+					EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync()
+							.get();
+					if (ethGetReceipt.getResult() != null) {
+						txReceipt = ethGetReceipt.getTransactionReceipt().get();
+					}
+					Thread.sleep(1000); // wait for 1 second before checking again
 				}
-				Thread.sleep(1000); // wait for 1 second before checking again
+				logger.info("createIncreasePosition status: " + txReceipt.getStatus());
+				break;
 			}
-			logger.info("createIncreasePosition status: " + txReceipt.getStatus());
 		}
     }
     
@@ -299,35 +307,43 @@ public class SmartContractAction {
     	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
     	
-		// function call
-		Function function = new Function("createDecreasePosition", inputs, outputs);
+		int retry = 0;
+		while (retry < 3) { // retry 3 times to avoid "32000 max fee per gas less than block base fee"
+			// function call
+			Function function = new Function("createDecreasePosition", inputs, outputs);
 
-		String encodedFunction = FunctionEncoder.encode(function);
-		BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST)
-				.send().getTransactionCount();
-		RawTransaction rawTransaction = RawTransaction.createTransaction(nonce, getCurrentGasPrice(web3j),
-				getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS, msg_value, encodedFunction);
-		// Sign and send the transaction
-		byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
-		String hexValue = Numeric.toHexString(signedMessage);
-		EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
-		if (ethSendTransaction.hasError()) {
-			logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-		} else {
-			// otherwise when error, will be looped forever
-			String transactionHash = ethSendTransaction.getTransactionHash();
-			logger.info("transactionHash: " + transactionHash);
+			String encodedFunction = FunctionEncoder.encode(function);
+			BigInteger nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.LATEST)
+					.send().getTransactionCount();
+			RawTransaction rawTransaction = RawTransaction.createTransaction(nonce, getCurrentGasPrice(web3j),
+					getCurrentGasLimit(web3j), GMXConstant.POSITION_ROUTER_ADDRESS, msg_value, encodedFunction);
+			// Sign and send the transaction
+			byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
+			String hexValue = Numeric.toHexString(signedMessage);
+			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+			if (ethSendTransaction.hasError()) {
+				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
+				Thread.sleep(500); // wait 500ms before retry
+				retry++;
+			} else {
+				// otherwise when error, will be looped forever
+				String transactionHash = ethSendTransaction.getTransactionHash();
+				logger.info("transactionHash: " + transactionHash);
 
-			// transactionHash exists even if transaction is not yet confirmed so we need to wait for response
-			TransactionReceipt txReceipt = null;
-			while (txReceipt == null) {
-				EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
-				if (ethGetReceipt.getResult() != null) {
-					txReceipt = ethGetReceipt.getTransactionReceipt().get();
+				// transactionHash exists even if transaction is not yet confirmed so we need to
+				// wait for response
+				TransactionReceipt txReceipt = null;
+				while (txReceipt == null) {
+					EthGetTransactionReceipt ethGetReceipt = web3j.ethGetTransactionReceipt(transactionHash).sendAsync()
+							.get();
+					if (ethGetReceipt.getResult() != null) {
+						txReceipt = ethGetReceipt.getTransactionReceipt().get();
+					}
+					Thread.sleep(1000); // wait for 1 second before checking again
 				}
-				Thread.sleep(1000); // wait for 1 second before checking again
+				logger.info("createDecreasePosition status: " + txReceipt.getStatus());
+				break;
 			}
-			logger.info("createDecreasePosition status: " + txReceipt.getStatus());
 		}
 	}
     
