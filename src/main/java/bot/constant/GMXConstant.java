@@ -30,7 +30,7 @@ public class GMXConstant {
     public static int USD_DECIMALS = 6;
     
     // trade related params
-    public static Uint256 AMOUNT_IN = new Uint256(new BigInteger("10000000")); // 10 USD
+    public static Uint256 AMOUNT_IN = new Uint256(new BigInteger("100000000")); // 100 USD
     public static Uint256 MIN_OUT = new Uint256(new BigInteger("0"));
     public static Uint256 EXECUTION_FEE = new Uint256(new BigInteger("200000000000000")); // 0.0000000002 ETH
     public static Bytes32 REFERRAL_CODE = new Bytes32(

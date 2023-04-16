@@ -15,6 +15,7 @@ import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 
+import bot.constant.AccConstant;
 import bot.constant.ActionsConstant;
 import bot.constant.GMXConstant;
 import bot.model.ClosePositionRequest;
@@ -77,7 +78,13 @@ public class Trade {
             Uint256 _sizeDelta = new Uint256(0);
             // If increase position: collateralDelta = 10 USD, sizeDelta = calculate
             if (th.getTradeHistoryData().getAction().startsWith(ActionsConstant.INCREASE_POSITION)) {
-                _collateralDelta = GMXConstant.AMOUNT_IN;
+            	// TODO fix this in the future, when I'm a whale
+				if (credentials.getAddress().equals(AccConstant.WHALE_KEY)) {
+					_collateralDelta = GMXConstant.AMOUNT_IN;
+				} else if (credentials.getAddress().equals(AccConstant.DOLPHIN_KEY)) {
+					// collateralDelta: x*10^30, amountIn (USDC) = x*10^6 => amountIn = collateralDelta/10^24
+					_collateralDelta = new Uint256(new BigInteger(collateralDelta).divide(new BigInteger("10").pow(24).divide(new BigInteger("2"))));
+				}
                 _sizeDelta = this.scAction.calculateSizeDelta(collateralDelta, sizeDelta, GMXConstant.AMOUNT_IN);
             }
             // If decrease position: collateralDelta = 0, sizeDelta = getFromSmartContract
@@ -103,6 +110,7 @@ public class Trade {
                 logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | open position: " + openPositionRequest.toString());
                 
                 // create similar trade
+                // TODO uncomment this after test
                 scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
             } else {
                 ClosePositionRequest closePositionRequest = new ClosePositionRequest();
@@ -120,6 +128,7 @@ public class Trade {
                 logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | close position: " + closePositionRequest.toString());
                 
 				// create similar trade
+                // TODO uncomment this after test
 				scAction.createDecreasePosition(web3j, credentials, closePositionRequest);
             }
         }

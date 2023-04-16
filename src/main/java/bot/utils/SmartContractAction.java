@@ -211,9 +211,9 @@ public class SmartContractAction {
         logger.info("leverage: " + leverage);
         BigDecimal _amountIn = new BigDecimal(amountIn.getValue());
 		BigInteger temp = BigDecimal.valueOf(_amountIn.doubleValue() * leverage).toBigInteger();
-		Uint256 calculatedSizeDelate = new Uint256(temp.multiply(new BigInteger("10").pow(24))); // sizeDelta: 30 decimals, collateralDelta: 6 decimals => 30-6 = 24
-		logger.info("calculatedSizeDelta: " + calculatedSizeDelate.getValue().toString());
-		return calculatedSizeDelate;
+		Uint256 calculatedSizeDelta = new Uint256(temp.multiply(new BigInteger("10").pow(24))); // sizeDelta: 30 decimals, collateralDelta: 6 decimals => 30-6 = 24
+		logger.info("calculatedSizeDelta: " + calculatedSizeDelta.getValue().toString());
+		return calculatedSizeDelta;
     }
 
     @SuppressWarnings({ "rawtypes", "deprecation" })

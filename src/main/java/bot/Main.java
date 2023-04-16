@@ -42,13 +42,15 @@ public class Main {
 		
 		if ("1".equals(args[0])) {
 			 credentials = Credentials.create(AccConstant.GMX_1_KEY);
-			 godAccount = AccConstant.GOD_KEY_1;
+			 godAccount = AccConstant.WHALE_KEY;
+			 // hard code 100$ per trade
 		} else if ("2".equals(args[0])) {
 			 credentials = Credentials.create(AccConstant.GMX_2_KEY);
-			 godAccount = AccConstant.GOD_KEY_2;
+			 godAccount = AccConstant.DOLPHIN_KEY;
+			 // divide by 2
 		} else if ("3".equals(args[0])) {
 			 credentials = Credentials.create(AccConstant.GMX_3_KEY);
-			 godAccount = AccConstant.GOD_KEY_3;
+			 godAccount = AccConstant.SHRIMP_KEY;
 		}
 
 		// start with the latest block whenever start program to avoid old trades
