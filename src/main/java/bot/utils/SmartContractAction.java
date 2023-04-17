@@ -43,6 +43,8 @@ import bot.model.PositionResponse;
 
 public class SmartContractAction {
     private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
+    
+    private static final int RETRY_TIMES = 10;
 
     public double getBalanceInEth(Web3j web3j, Credentials credentials) throws InterruptedException, ExecutionException, IOException {
         EthGetBalance ethGetBalance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
@@ -240,7 +242,7 @@ public class SmartContractAction {
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
     	
 		int retry = 0;
-		while (retry < 3) { // retry 3 times to avoid "32000 max fee per gas less than block base fee"
+		while (retry < RETRY_TIMES) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
 			// function call
 			Function function = new Function("createIncreasePosition", inputs, outputs);
 
@@ -255,8 +257,12 @@ public class SmartContractAction {
 			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 			if (ethSendTransaction.hasError()) {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-				Thread.sleep(500); // wait 500ms before retry
-				retry++;
+				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")) {
+					Thread.sleep(500); // wait 500ms before retry
+					retry++;
+				} else {
+					break;
+				}
 			} else {
 				// otherwise when error, will be looped forever
 				String transactionHash = ethSendTransaction.getTransactionHash();
@@ -308,7 +314,7 @@ public class SmartContractAction {
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
     	
 		int retry = 0;
-		while (retry < 3) { // retry 3 times to avoid "32000 max fee per gas less than block base fee"
+		while (retry < RETRY_TIMES) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
 			// function call
 			Function function = new Function("createDecreasePosition", inputs, outputs);
 
@@ -323,8 +329,12 @@ public class SmartContractAction {
 			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 			if (ethSendTransaction.hasError()) {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-				Thread.sleep(500); // wait 500ms before retry
-				retry++;
+				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")) {
+					Thread.sleep(500); // wait 500ms before retry
+					retry++;
+				} else {
+					break;
+				}
 			} else {
 				// otherwise when error, will be looped forever
 				String transactionHash = ethSendTransaction.getTransactionHash();

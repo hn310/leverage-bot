@@ -111,6 +111,7 @@ public class ClosePositionRequest {
     public String toString() {
         StringBuffer str = new StringBuffer();
         str.append("indexToken: " + this.indexToken.getValue() + ", ");
+        str.append("collateralDelta: " + this.collateralDelta.getValue() + ", ");
         str.append("sizeDelta: " + this.sizeDelta.getValue() + ", ");
         str.append("isLong: " + this.isLong.getValue() + ", ");
         str.append("receiver: " + this.receiver.getValue() + ", ");
