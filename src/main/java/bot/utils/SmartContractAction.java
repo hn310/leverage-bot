@@ -257,7 +257,8 @@ public class SmartContractAction {
 			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 			if (ethSendTransaction.hasError()) {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")) {
+				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")
+						|| ethSendTransaction.getError().getMessage().contains("insufficient funds for gas")) {
 					Thread.sleep(500); // wait 500ms before retry
 					retry++;
 				} else {
@@ -329,7 +330,8 @@ public class SmartContractAction {
 			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 			if (ethSendTransaction.hasError()) {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")) {
+				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")
+						|| ethSendTransaction.getError().getMessage().contains("insufficient funds for gas")) {
 					Thread.sleep(500); // wait 500ms before retry
 					retry++;
 				} else {
@@ -386,6 +388,6 @@ public class SmartContractAction {
     }
 
     private BigInteger getCurrentGasLimit(Web3j web3j) throws IOException {
-        return new BigInteger("10000000");
+        return new BigInteger("4000000");
     }
 }
