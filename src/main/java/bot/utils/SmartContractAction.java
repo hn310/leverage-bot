@@ -44,8 +44,6 @@ import bot.model.PositionResponse;
 public class SmartContractAction {
     private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
     
-    private static final int RETRY_TIMES = 10;
-
     public double getBalanceInEth(Web3j web3j, Credentials credentials) throws InterruptedException, ExecutionException, IOException {
         EthGetBalance ethGetBalance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
 
@@ -241,8 +239,7 @@ public class SmartContractAction {
     	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
     	
-		int retry = 0;
-		while (retry < RETRY_TIMES) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
+		while (true) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
 			// function call
 			Function function = new Function("createIncreasePosition", inputs, outputs);
 
@@ -259,8 +256,7 @@ public class SmartContractAction {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
 				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")
 						|| ethSendTransaction.getError().getMessage().contains("insufficient funds for gas")) {
-					Thread.sleep(500); // wait 500ms before retry
-					retry++;
+					Thread.sleep(1000); // wait 1s before retry
 				} else {
 					break;
 				}
@@ -314,8 +310,7 @@ public class SmartContractAction {
     	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
     	
-		int retry = 0;
-		while (retry < RETRY_TIMES) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
+		while (true) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
 			// function call
 			Function function = new Function("createDecreasePosition", inputs, outputs);
 
@@ -332,8 +327,7 @@ public class SmartContractAction {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
 				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")
 						|| ethSendTransaction.getError().getMessage().contains("insufficient funds for gas")) {
-					Thread.sleep(500); // wait 500ms before retry
-					retry++;
+					Thread.sleep(1000); // wait 1s before retry
 				} else {
 					break;
 				}
