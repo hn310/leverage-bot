@@ -239,7 +239,7 @@ public class SmartContractAction {
     	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
     	
-		while (true) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
+		while (true) { // retry to avoid "32000 max fee per gas less than block base fee"
 			// function call
 			Function function = new Function("createIncreasePosition", inputs, outputs);
 
@@ -310,7 +310,7 @@ public class SmartContractAction {
     	List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
     	outputs.add(new TypeReference<Bytes32>() {}); // requestKey
     	
-		while (true) { // retry 5 times to avoid "32000 max fee per gas less than block base fee"
+		while (true) { // retry to avoid "32000 max fee per gas less than block base fee"
 			// function call
 			Function function = new Function("createDecreasePosition", inputs, outputs);
 
@@ -382,6 +382,6 @@ public class SmartContractAction {
     }
 
     private BigInteger getCurrentGasLimit(Web3j web3j) throws IOException {
-        return new BigInteger("4000000");
+        return new BigInteger("6000000"); // 2023/05/01: 40xxx is not enough, raise to 6000000
     }
 }
