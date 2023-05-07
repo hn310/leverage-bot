@@ -44,6 +44,8 @@ import bot.model.PositionResponse;
 public class SmartContractAction {
     private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
     
+    private static final String[] send_errors = {"max fee per gas","insufficient funds for gas","intrinsic gas too low"};
+    
     public double getBalanceInEth(Web3j web3j, Credentials credentials) throws InterruptedException, ExecutionException, IOException {
         EthGetBalance ethGetBalance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
 
@@ -254,8 +256,7 @@ public class SmartContractAction {
 			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 			if (ethSendTransaction.hasError()) {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")
-						|| ethSendTransaction.getError().getMessage().contains("insufficient funds for gas")) {
+				if (Arrays.stream(send_errors).anyMatch(ethSendTransaction.getError().getMessage()::contains)) {
 					Thread.sleep(1000); // wait 1s before retry
 				} else {
 					break;
@@ -325,8 +326,7 @@ public class SmartContractAction {
 			EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
 			if (ethSendTransaction.hasError()) {
 				logger.error(ethSendTransaction.getError().getCode() + " " + ethSendTransaction.getError().getMessage());
-				if (ethSendTransaction.getError().getMessage().contains("max fee per gas")
-						|| ethSendTransaction.getError().getMessage().contains("insufficient funds for gas")) {
+				if (Arrays.stream(send_errors).anyMatch(ethSendTransaction.getError().getMessage()::contains)) {
 					Thread.sleep(1000); // wait 1s before retry
 				} else {
 					break;
