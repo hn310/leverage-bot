@@ -19,6 +19,7 @@ import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.Uint;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
@@ -51,6 +52,27 @@ public class SmartContractAction {
 
         BigInteger wei = ethGetBalance.getBalance();
         return wei.doubleValue() / Math.pow(10, 18);
+    }
+    
+    public BigInteger getBalanceInUsdc(Web3j web3j, Credentials credentials) throws IOException {
+    	Function balanceOfFunction = new Function(
+                "balanceOf",
+                Collections.singletonList(new org.web3j.abi.datatypes.Address(credentials.getAddress())),
+                Collections.singletonList(new TypeReference<Uint256>() {
+                })
+        );
+    	
+    	String encodedFunction = FunctionEncoder.encode(balanceOfFunction);
+        org.web3j.protocol.core.methods.response.EthCall ethCall = web3j.ethCall(
+                org.web3j.protocol.core.methods.request.Transaction.createEthCallTransaction(
+                		credentials.getAddress(), GMXConstant.USDC_ADDRESS, encodedFunction),
+                DefaultBlockParameterName.LATEST)
+                .send();
+
+        List<TypeReference<Type>> outputParameters = balanceOfFunction.getOutputParameters();
+        List<Type> values = FunctionReturnDecoder.decode(ethCall.getValue(), outputParameters);
+        BigInteger balance = (BigInteger) values.get(0).getValue();
+        return balance;
     }
 
     @SuppressWarnings("rawtypes")
@@ -220,6 +242,11 @@ public class SmartContractAction {
 
     @SuppressWarnings({ "rawtypes", "deprecation" })
 	public void createIncreasePosition(Web3j web3j, Credentials credentials, OpenPositionRequest openPositionRequest) throws InterruptedException, ExecutionException, IOException {
+    	// if not enough balance then return
+    	if (isNotEnoughBalance(web3j, credentials, openPositionRequest.getAmountIn())) {
+    		return;
+    	}
+    	
     	// require(msg.value == _executionFee, "val");
     	BigInteger msg_value = new SmartContractAction().getMinExecutionFee(web3j).getValue(); 
     	
@@ -383,5 +410,15 @@ public class SmartContractAction {
 
     private BigInteger getCurrentGasLimit(Web3j web3j) throws IOException {
         return new BigInteger("6000000"); // 2023/05/01: 40xxx is not enough, raise to 6000000
+    }
+    
+    private boolean isNotEnoughBalance(Web3j web3j, Credentials credentials, Uint256 amountIn) throws IOException {
+		BigInteger balanceInUsdc = getBalanceInUsdc(web3j, credentials);
+		if (balanceInUsdc.compareTo(amountIn.getValue()) < 0) {
+			logger.info("currentBalance is not enough: " + balanceInUsdc);
+			return true;
+		} else {
+			return false;
+		}
     }
 }

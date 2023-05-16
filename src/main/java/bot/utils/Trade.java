@@ -83,7 +83,7 @@ public class Trade {
 					_collateralDelta = GMXConstant.AMOUNT_IN;
 				} else if (godAccount.equals(AccConstant.DOLPHIN_KEY)) {
 					// collateralDelta: x*10^30, amountIn (USDC) = x*10^6 => amountIn = collateralDelta/10^24
-//					_collateralDelta = new Uint256(new BigInteger(collateralDelta).divide(new BigInteger("10").pow(24).multiply(new BigInteger("2"))));
+//					_collateralDelta = new Uint256(new BigInteger(collateralDelta).divide(new BigInteger("10").pow(24).multiply(new BigInteger("100"))));
 					_collateralDelta = GMXConstant.AMOUNT_IN;
 				}
                 _sizeDelta = this.scAction.calculateSizeDelta(collateralDelta, sizeDelta, GMXConstant.AMOUNT_IN);
