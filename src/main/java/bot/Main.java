@@ -60,7 +60,7 @@ public class Main {
 		new ApiAction().writeLastBlockNo(latestBlock.intValueExact());
 		logger.info("Start program!! Latest block: " + latestBlock.intValueExact());
 		logger.info("godAccount: " + godAccount);
-		logger.info("ver: 2023/05/16 22:25");
+		logger.info("ver: 2023/05/20 22:25");
 
 		Trade trade = new Trade();
 		
