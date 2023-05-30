@@ -1,5 +1,6 @@
 package bot.model;
 
+import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.generated.Uint256;
 
@@ -15,6 +16,8 @@ public class PositionResponse {
     private Uint256 lastIncreasedTime;
     private Uint256 delta;
     private Uint256 hasRealisedProfit;
+    private Address indexToken;
+    private Bool isLong;
 
     public Uint256 getSize() {
         return size;
@@ -102,5 +105,21 @@ public class PositionResponse {
 
 	public void setHasRealisedProfit(Uint256 hasRealisedProfit) {
 		this.hasRealisedProfit = hasRealisedProfit;
+	}
+
+	public Address getIndexToken() {
+		return indexToken;
+	}
+
+	public void setIndexToken(Address indexToken) {
+		this.indexToken = indexToken;
+	}
+
+	public Bool getIsLong() {
+		return isLong;
+	}
+
+	public void setIsLong(Bool isLong) {
+		this.isLong = isLong;
 	}
 }

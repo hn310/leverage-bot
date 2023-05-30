@@ -172,8 +172,15 @@ public class Trade {
 		List<PositionResponse> psList = scAction.getPositions(web3j, credentials);
 		for (PositionResponse ps: psList) {
 			// check if hasProfit = 0 (in loss)
-			if (ps.getHasProfitInGetPositions().getValue().intValue() == 0) {
+			if (ps.getHasProfitInGetPositions().getValue().intValue() == 0 
+					&& ps.getSize().getValue().intValue() != 0) {
 				System.out.println(ps.getSize().getValue());
+				System.out.println(ps.getCollateral().getValue());
+				System.out.println(ps.getDelta().getValue());
+				System.out.println(ps.getIndexToken().getValue());
+				System.out.println(ps.getIsLong().getValue());
+				// calculate % in loss = (delta + fee) / collateral
+				// fee = borrow fee + open fee + close fee = 0.3% * size
 			}
 		}
 		return false;

@@ -110,6 +110,32 @@ public class SmartContractAction {
         isLongArr.add(GMXConstant.IS_LONG);
         isLongArr.add(GMXConstant.IS_SHORT);
         inputs.add(new DynamicArray(isLongArr));
+        
+        // set neccessary info for PositionResponse to use in calculating % in loss
+        for (int i = 0; i < collateralTokensNumber; i++) {
+        	PositionResponse ps = new PositionResponse();
+        	psList.add(ps);
+        }
+        // WBTC
+        psList.get(0).setIndexToken(new Address(GMXConstant.WBTC_ADDRESS));
+        psList.get(0).setIsLong(GMXConstant.IS_LONG);
+        psList.get(1).setIndexToken(new Address(GMXConstant.WBTC_ADDRESS));
+        psList.get(1).setIsLong(GMXConstant.IS_SHORT);
+        // ETH
+        psList.get(2).setIndexToken(new Address(GMXConstant.WETH_ADDRESS));
+        psList.get(2).setIsLong(GMXConstant.IS_LONG);
+        psList.get(3).setIndexToken(new Address(GMXConstant.WETH_ADDRESS));
+        psList.get(3).setIsLong(GMXConstant.IS_SHORT);
+        // LINK
+        psList.get(4).setIndexToken(new Address(GMXConstant.LINK_ADDRESS));
+        psList.get(4).setIsLong(GMXConstant.IS_LONG);
+        psList.get(5).setIndexToken(new Address(GMXConstant.LINK_ADDRESS));
+        psList.get(5).setIsLong(GMXConstant.IS_SHORT);
+        // UNI
+        psList.get(6).setIndexToken(new Address(GMXConstant.UNI_ADDRESS));
+        psList.get(6).setIsLong(GMXConstant.IS_LONG);
+        psList.get(7).setIndexToken(new Address(GMXConstant.UNI_ADDRESS));
+        psList.get(7).setIsLong(GMXConstant.IS_SHORT);
 
         List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
         // have to add this for the function to work
@@ -146,19 +172,15 @@ public class SmartContractAction {
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
         for (int i = 0; i < response.size(); i++) {
 			if (i % 9 == 2) { // skip the first 2 elements in array (32 & indexTokens*9)
-				PositionResponse ps = new PositionResponse();
-				ps.setSize((Uint256) response.get(i));
-	            ps.setCollateral((Uint256) response.get(i+1));
-	            ps.setAveragePrice((Uint256) response.get(i+2));
-	            ps.setEntryFundingRate((Uint256) response.get(i+3));
-	            ps.setHasRealisedProfit((Uint256) response.get(i+4));
-	            ps.setRealisedPnl((Uint256) response.get(i+5));
-	            ps.setLastIncreasedTime((Uint256) response.get(i+6));
-	            ps.setHasProfitInGetPositions((Uint256) response.get(i+7));
-	            ps.setDelta((Uint256) response.get(i+8));
-
-	            // add to response list
-	            psList.add(ps);
+				psList.get(i / 9).setSize((Uint256) response.get(i));
+				psList.get(i / 9).setCollateral((Uint256) response.get(i + 1));
+				psList.get(i / 9).setAveragePrice((Uint256) response.get(i + 2));
+				psList.get(i / 9).setEntryFundingRate((Uint256) response.get(i + 3));
+				psList.get(i / 9).setHasRealisedProfit((Uint256) response.get(i + 4));
+				psList.get(i / 9).setRealisedPnl((Uint256) response.get(i + 5));
+				psList.get(i / 9).setLastIncreasedTime((Uint256) response.get(i + 6));
+				psList.get(i / 9).setHasProfitInGetPositions((Uint256) response.get(i + 7));
+				psList.get(i / 9).setDelta((Uint256) response.get(i + 8));
 			}
 		}
         return psList;
