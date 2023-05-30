@@ -19,7 +19,6 @@ import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.abi.datatypes.Uint;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
@@ -30,7 +29,6 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGasPrice;
-import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -46,13 +44,6 @@ public class SmartContractAction {
     private static final Logger logger = LogManager.getLogger(SmartContractAction.class);
     
     private static final String[] send_errors = {"max fee per gas","insufficient funds for gas","intrinsic gas too low"};
-    
-    public double getBalanceInEth(Web3j web3j, Credentials credentials) throws InterruptedException, ExecutionException, IOException {
-        EthGetBalance ethGetBalance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
-
-        BigInteger wei = ethGetBalance.getBalance();
-        return wei.doubleValue() / Math.pow(10, 18);
-    }
     
     public BigInteger getBalanceInUsdc(Web3j web3j, Credentials credentials) throws IOException {
     	Function balanceOfFunction = new Function(
@@ -75,41 +66,26 @@ public class SmartContractAction {
         return balance;
     }
 
-    @SuppressWarnings("rawtypes")
-    public double getGLPPrice(Web3j web3j) throws InterruptedException, ExecutionException, IOException {
-        List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
-        TypeReference<Uint256> size = new TypeReference<Uint256>() {
-        };
-        outputs.add(size);
-
-        Function function = new Function("getPrice", // Function name
-                Collections.singletonList(new Bool(true)), outputs); // Function returned parameters
-
-        String encodedFunction = FunctionEncoder.encode(function);
-        EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(null, GMXConstant.GLP_MANAGER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST)
-                .send();
-
-        List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
-        double convertedPrice = convertToUsd(new BigInteger(response.get(0).getValue().toString()), GMXConstant.USD_PRICE_PRECISION);
-        System.out.println(convertedPrice);
-        return convertedPrice;
-    }
-
     @SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
-    public List<Type> getPositions(Web3j web3j, String godAccount) throws IOException, TransactionException, InterruptedException, ExecutionException {
-        int collateralTokensNumber = 0;
+    public List<PositionResponse> getPositions(Web3j web3j, Credentials credentials) throws IOException, TransactionException, InterruptedException, ExecutionException {
+    	List<PositionResponse> psList = new ArrayList<PositionResponse>();
+    	int collateralTokensNumber = 0;
 
         List<Type> inputs = new ArrayList<Type>();
         // vault contract address
         inputs.add(new Address(GMXConstant.VAULT_ADDRESS));
         // account of the user
-        inputs.add(new Address(godAccount));
+        inputs.add(new Address(credentials.getAddress()));
         // array of collateralTokens
         List<Address> collateralTokens = new ArrayList<Address>();
-        collateralTokens.add(new Address(GMXConstant.WBTC_ADDRESS));
-        collateralTokens.add(new Address(GMXConstant.WBTC_ADDRESS));
-        collateralTokens.add(new Address(GMXConstant.WETH_ADDRESS));
-        collateralTokens.add(new Address(GMXConstant.WETH_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
         inputs.add(new DynamicArray(collateralTokens));
         collateralTokensNumber = collateralTokens.size();
         // array of indexTokens
@@ -118,6 +94,10 @@ public class SmartContractAction {
         indexTokens.add(new Address(GMXConstant.WBTC_ADDRESS));
         indexTokens.add(new Address(GMXConstant.WETH_ADDRESS));
         indexTokens.add(new Address(GMXConstant.WETH_ADDRESS));
+        indexTokens.add(new Address(GMXConstant.LINK_ADDRESS));
+        indexTokens.add(new Address(GMXConstant.LINK_ADDRESS));
+        indexTokens.add(new Address(GMXConstant.UNI_ADDRESS));
+        indexTokens.add(new Address(GMXConstant.UNI_ADDRESS));
         inputs.add(new DynamicArray(indexTokens));
         // array of whether the position is a long position
         List<Bool> isLongArr = new ArrayList<Bool>();
@@ -125,46 +105,38 @@ public class SmartContractAction {
         isLongArr.add(GMXConstant.IS_SHORT);
         isLongArr.add(GMXConstant.IS_LONG);
         isLongArr.add(GMXConstant.IS_SHORT);
+        isLongArr.add(GMXConstant.IS_LONG);
+        isLongArr.add(GMXConstant.IS_SHORT);
+        isLongArr.add(GMXConstant.IS_LONG);
+        isLongArr.add(GMXConstant.IS_SHORT);
         inputs.add(new DynamicArray(isLongArr));
 
         List<TypeReference<?>> outputs = new ArrayList<TypeReference<?>>();
+        // have to add this for the function to work
+        outputs.add(new TypeReference<Uint256>() {}); // have no fucking clue why this return 32
+        outputs.add(new TypeReference<Uint256>() {}); // have no fucking clue why this return collateralTokensNumber * 9
+        
+        collateralTokensNumber=0;
         for (int i = 0; i < collateralTokensNumber; i++) {
             // size
-            TypeReference<Uint256> size = new TypeReference<Uint256>() {
-            };
-            outputs.add(size);
+            outputs.add(new TypeReference<Uint256>() {});
             // collateral
-            TypeReference<Uint256> collateral = new TypeReference<Uint256>() {
-            };
-            outputs.add(collateral);
+			outputs.add(new TypeReference<Uint256>() {});
             // averagePrice
-            TypeReference<Uint256> averagePrice = new TypeReference<Uint256>() {
-            };
-            outputs.add(averagePrice);
+			outputs.add(new TypeReference<Uint256>() {});
             // entryFundingRate
-            TypeReference<Uint256> entryFundingRate = new TypeReference<Uint256>() {
-            };
-            outputs.add(entryFundingRate);
+			outputs.add(new TypeReference<Uint256>() {});
             // hasRealisedProfit
-            TypeReference<Bool> hasRealisedProfit = new TypeReference<Bool>() {
-            };
-            outputs.add(hasRealisedProfit);
+			outputs.add(new TypeReference<Uint256>() {});
             // realisedPnl
-            TypeReference<Uint256> realisedPnl = new TypeReference<Uint256>() {
-            };
-            outputs.add(realisedPnl);
+            outputs.add(new TypeReference<Uint256>() {});
             // lastIncreasedTime
-            TypeReference<Uint256> lastIncreasedTime = new TypeReference<Uint256>() {
-            };
-            outputs.add(lastIncreasedTime);
-            // hasProfit
-            TypeReference<Bool> hasProfit = new TypeReference<Bool>() {
-            };
-            outputs.add(hasProfit);
+            outputs.add(new TypeReference<Uint256>() {});
+            // hasProfit (in getPositions. In getPosition it is Bool)
+            outputs.add(new TypeReference<Uint256>() {});
             // delta
-            TypeReference<Uint256> delta = new TypeReference<Uint256>() {
-            };
-            outputs.add(delta);
+            outputs.add(new TypeReference<Uint256>() {});
+            
         }
 
         Function function = new Function("getPositions", // Function name
@@ -172,9 +144,25 @@ public class SmartContractAction {
 
         String encodedFunction = FunctionEncoder.encode(function);
         EthCall encodedResponse = web3j.ethCall(Transaction.createEthCallTransaction(null, GMXConstant.READER_ADDRESS, encodedFunction), DefaultBlockParameterName.LATEST).send();
-
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
-        return response;
+        for (int i = 0; i < response.size(); i++) {
+			if (i % 9 == 2) { // skip the first 2 elements in array (32 & indexTokens*9)
+				PositionResponse ps = new PositionResponse();
+				ps.setSize((Uint256) response.get(i));
+	            ps.setCollateral((Uint256) response.get(i+1));
+	            ps.setAveragePrice((Uint256) response.get(i+2));
+	            ps.setEntryFundingRate((Uint256) response.get(i+3));
+	            ps.setHasRealisedProfit((Uint256) response.get(i+4));
+	            ps.setRealisedPnl((Uint256) response.get(i+5));
+	            ps.setLastIncreasedTime((Uint256) response.get(i+6));
+	            ps.setHasProfitInGetPositions((Uint256) response.get(i+7));
+	            ps.setDelta((Uint256) response.get(i+8));
+
+	            // add to response list
+	            psList.add(ps);
+			}
+		}
+        return psList;
     }
 
     @SuppressWarnings("rawtypes")

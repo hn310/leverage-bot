@@ -11,7 +11,10 @@ public class PositionResponse {
     private Uint256 reserveAmount;
     private Uint256 realisedPnl;
     private Bool hasProfit;
+    private Uint256 hasProfitInGetPositions;
     private Uint256 lastIncreasedTime;
+    private Uint256 delta;
+    private Uint256 hasRealisedProfit;
 
     public Uint256 getSize() {
         return size;
@@ -77,4 +80,27 @@ public class PositionResponse {
         this.lastIncreasedTime = lastIncreasedTime;
     }
 
+	public Uint256 getDelta() {
+		return delta;
+	}
+
+	public void setDelta(Uint256 delta) {
+		this.delta = delta;
+	}
+
+	public Uint256 getHasProfitInGetPositions() {
+		return hasProfitInGetPositions;
+	}
+
+	public void setHasProfitInGetPositions(Uint256 hasProfitInGetPositions) {
+		this.hasProfitInGetPositions = hasProfitInGetPositions;
+	}
+
+	public Uint256 getHasRealisedProfit() {
+		return hasRealisedProfit;
+	}
+
+	public void setHasRealisedProfit(Uint256 hasRealisedProfit) {
+		this.hasRealisedProfit = hasRealisedProfit;
+	}
 }

@@ -14,6 +14,7 @@ import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.exceptions.TransactionException;
 
 import bot.constant.AccConstant;
 import bot.constant.ActionsConstant;
@@ -165,5 +166,16 @@ public class Trade {
 			}
 		}
 		return acceptablePrice;
+	}
+	
+	public boolean isAnyPositionInDanger(Web3j web3j, Credentials credentials) throws IOException, TransactionException, InterruptedException, ExecutionException {
+		List<PositionResponse> psList = scAction.getPositions(web3j, credentials);
+		for (PositionResponse ps: psList) {
+			// check if hasProfit = 0 (in loss)
+			if (ps.getHasProfitInGetPositions().getValue().intValue() == 0) {
+				System.out.println(ps.getSize().getValue());
+			}
+		}
+		return false;
 	}
 }

@@ -21,6 +21,8 @@ public class GMXConstant {
     public static String WBTC_ADDRESS = "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
     public static String WETH_ADDRESS = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
     public static String USDC_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8";
+    public static String LINK_ADDRESS = "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4";
+    public static String UNI_ADDRESS = "0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0";
     
     // long, short position
     public static Bool IS_LONG = new Bool(true);
