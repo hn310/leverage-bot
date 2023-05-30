@@ -116,7 +116,6 @@ public class SmartContractAction {
         outputs.add(new TypeReference<Uint256>() {}); // have no fucking clue why this return 32
         outputs.add(new TypeReference<Uint256>() {}); // have no fucking clue why this return collateralTokensNumber * 9
         
-        collateralTokensNumber=0;
         for (int i = 0; i < collateralTokensNumber; i++) {
             // size
             outputs.add(new TypeReference<Uint256>() {});
