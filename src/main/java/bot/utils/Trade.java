@@ -168,21 +168,23 @@ public class Trade {
 		return acceptablePrice;
 	}
 	
-	public boolean isAnyPositionInDanger(Web3j web3j, Credentials credentials) throws IOException, TransactionException, InterruptedException, ExecutionException {
+	public void rescuePositionInDanger(Web3j web3j, Credentials credentials) throws IOException, TransactionException, InterruptedException, ExecutionException {
+		BigInteger ZERO = BigInteger.valueOf(0);
 		List<PositionResponse> psList = scAction.getPositions(web3j, credentials);
 		for (PositionResponse ps: psList) {
 			// check if hasProfit = 0 (in loss)
-			if (ps.getHasProfitInGetPositions().getValue().intValue() == 0 
-					&& ps.getSize().getValue().intValue() != 0) {
-				System.out.println(ps.getSize().getValue());
-				System.out.println(ps.getCollateral().getValue());
-				System.out.println(ps.getDelta().getValue());
-				System.out.println(ps.getIndexToken().getValue());
-				System.out.println(ps.getIsLong().getValue());
-				// calculate % in loss = (delta + fee) / collateral
+			if (ps.getHasProfitInGetPositions().getValue().compareTo(ZERO) == 0 
+					&& ps.getSize().getValue().compareTo(ZERO) != 0) {
 				// fee = borrow fee + open fee + close fee = 0.3% * size
+				BigInteger fee = ps.getSize().getValue().multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(1000));
+				// calculate % in loss = (delta + fee) / collateral
+				double percentInLoss = (ps.getDelta().getValue().add(fee)).doubleValue()*100 / ps.getCollateral().getValue().doubleValue();
+				// if down 70%, to avoid liquidation, deploy more fund
+				if (percentInLoss > 70) {
+					
+				}
+				System.out.println("In danger position found !!! indexToken: " + ps.getIndexToken().getValue() + ", isLong: " + ps.getIsLong().getValue() + ", percentInLoss: " + percentInLoss);
 			}
 		}
-		return false;
 	}
 }

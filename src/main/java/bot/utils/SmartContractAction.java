@@ -217,14 +217,14 @@ public class SmartContractAction {
 
         List<Type> response = FunctionReturnDecoder.decode(encodedResponse.getValue(), function.getOutputParameters());
         if (response.size() > 0) {
-            ps.setSize(new Uint256((BigInteger) response.get(0).getValue()));
-            ps.setCollateral(new Uint256((BigInteger) response.get(1).getValue()));
-            ps.setAveragePrice(new Uint256((BigInteger) response.get(2).getValue()));
-            ps.setEntryFundingRate(new Uint256((BigInteger) response.get(3).getValue()));
-            ps.setReserveAmount(new Uint256((BigInteger) response.get(4).getValue()));
-            ps.setRealisedPnl(new Uint256((BigInteger) response.get(5).getValue()));
-            ps.setHasProfit(new Bool((Boolean) response.get(6).getValue()));
-            ps.setLastIncreasedTime(new Uint256((BigInteger) response.get(7).getValue()));
+            ps.setSize((Uint256) response.get(0));
+            ps.setCollateral((Uint256) response.get(1));
+            ps.setAveragePrice((Uint256) response.get(2));
+            ps.setEntryFundingRate((Uint256) response.get(3));
+            ps.setReserveAmount((Uint256) response.get(4));
+            ps.setRealisedPnl((Uint256) response.get(5));
+            ps.setHasProfit((Bool) response.get(6));
+            ps.setLastIncreasedTime((Uint256) response.get(7));
         }
         // sizeDelta only have value with open position.
         // for closed position, sizeDelta = 0
