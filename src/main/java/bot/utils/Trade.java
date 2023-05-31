@@ -187,4 +187,32 @@ public class Trade {
 			}
 		}
 	}
+	
+	private void createRescueOrder(Web3j web3j, Credentials credentials, PositionResponse ps) throws InterruptedException, ExecutionException, IOException {
+		OpenPositionRequest openPositionRequest = new OpenPositionRequest();
+		List<Address> path = new ArrayList<Address>();
+		if (ps.getIsLong().getValue().booleanValue() == true) {
+			// increase long: path[USDC, BTC]
+			path.add(new Address(GMXConstant.USDC_ADDRESS));
+			path.add(ps.getIndexToken());
+		} else {
+			// increase/decrease short: path[USDC] only
+			path.add(new Address(GMXConstant.USDC_ADDRESS));
+		}
+		openPositionRequest.setPath(path);
+		openPositionRequest.setIndexToken(ps.getIndexToken());
+		openPositionRequest.setAmountIn(GMXConstant.AMOUNT_IN);
+		// rescue order: so leverage 1.2 = 6/5 only
+		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(6)).divide(BigInteger.valueOf(5));
+		openPositionRequest.setSizeDelta(new Uint256(sizeDelta));
+		// TODO buy with any price: calculate price and multiple/divide with a factor, but depend on long short
+		openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger("27599689000000000000000000000000000")));
+		openPositionRequest.setIsLong(ps.getIsLong());
+		openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
+		openPositionRequest.setExecutionFee(scAction.getMinExecutionFee(web3j));
+		openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
+		openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
+		
+		scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
+	}
 }
