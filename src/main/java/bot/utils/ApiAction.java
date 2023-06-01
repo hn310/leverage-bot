@@ -10,8 +10,10 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -81,6 +83,29 @@ public class ApiAction {
         }
 
 		return uniqueTradeHistories;
+    }
+    
+    public Map<String, String> getCurrentPrices() throws IOException {
+    	OkHttpClient client = new OkHttpClient();
+    	HttpUrl.Builder urlBuilder = HttpUrl.parse(GMXConstant.GMX_PRICES_URL).newBuilder();
+		String url = urlBuilder.build().toString();
+
+		Request request = new Request.Builder().url(url).build();
+
+		Call call = client.newCall(request);
+		Response response = call.execute();
+
+		String resStr = response.body().string();
+
+		Gson gson = new Gson();
+		Map<String, String> map = new HashMap<String, String>();
+		try {
+			map = gson.fromJson(resStr, Map.class);
+		} catch (Exception e) {
+			logger.error(e);
+			logger.error("resStr: " + resStr);
+		}
+    	return map;
     }
 
     public int readLastBlockNo() throws IOException {

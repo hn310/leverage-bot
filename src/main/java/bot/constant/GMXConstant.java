@@ -10,6 +10,7 @@ import org.web3j.utils.Numeric;
 
 public class GMXConstant {
     public static String GMX_ACTIONS_URL = "https://api.gmx.io/actions";
+    public static String GMX_PRICES_URL = "https://api.gmx.io/prices";
     
     // smart contracts address
     public static String POSITION_ROUTER_ADDRESS = "0xb87a436B93fFE9D75c5cFA7bAcFff96430b09868";

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,6 +14,7 @@ import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.Keys;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.exceptions.TransactionException;
 
@@ -181,10 +183,12 @@ public class Trade {
 				double percentInLoss = (ps.getDelta().getValue().add(fee)).doubleValue()*100 / ps.getCollateral().getValue().doubleValue();
 				// if down 70%, to avoid liquidation, deploy more fund
 				if (percentInLoss > 70) {
-					
+					createRescueOrder(web3j, credentials, ps);
 				}
 				System.out.println("In danger position found !!! indexToken: " + ps.getIndexToken().getValue() + ", isLong: " + ps.getIsLong().getValue() + ", percentInLoss: " + percentInLoss);
 			}
+			//TODO remove after test
+			createRescueOrder(web3j, credentials, ps);
 		}
 	}
 	
@@ -206,13 +210,21 @@ public class Trade {
 		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(6)).divide(BigInteger.valueOf(5));
 		openPositionRequest.setSizeDelta(new Uint256(sizeDelta));
 		// TODO buy with any price: calculate price and multiple/divide with a factor, but depend on long short
-		openPositionRequest.setAcceptablePrice(new Uint256(new BigInteger("27599689000000000000000000000000000")));
+		calculateRescuePrice(openPositionRequest);
 		openPositionRequest.setIsLong(ps.getIsLong());
 		openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
 		openPositionRequest.setExecutionFee(scAction.getMinExecutionFee(web3j));
 		openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
 		openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
-		
-		scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
+		// TODO uncomment this
+//		scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
+	}
+	
+	private void calculateRescuePrice(OpenPositionRequest openPositionRequest) throws IOException {
+		Map<String, String> currentPrices = apiAction.getCurrentPrices();
+		String indexToken = openPositionRequest.getIndexToken().getValue();
+		String currentPriceStr = currentPrices.get(Keys.toChecksumAddress(indexToken));
+		BigInteger currentPrice = new BigInteger(currentPriceStr);
+		System.out.println(currentPrice);
 	}
 }
