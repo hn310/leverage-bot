@@ -40,4 +40,5 @@ public class GMXConstant {
             Numeric.hexStringToByteArray("0x0000000000000000000000000000000000000000000000000000000000000000")) ;
     public static Address CALLBACK_TARGET = new Address("0x0000000000000000000000000000000000000000");
     public static double SLIPPAGE = 1.005; // 0.5%
+    public static int PERCENT_DOWN_TO_RESCUE = 75; // // if down xx%, to avoid liquidation, deploy more fund
 }

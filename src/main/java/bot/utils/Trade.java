@@ -181,14 +181,12 @@ public class Trade {
 				BigInteger fee = ps.getSize().getValue().multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(1000));
 				// calculate % in loss = (delta + fee) / collateral
 				double percentInLoss = (ps.getDelta().getValue().add(fee)).doubleValue()*100 / ps.getCollateral().getValue().doubleValue();
-				// if down 70%, to avoid liquidation, deploy more fund
-				if (percentInLoss > 70) {
+				// if down xx%, to avoid liquidation, deploy more fund
+				if (percentInLoss > GMXConstant.PERCENT_DOWN_TO_RESCUE) {
 					createRescueOrder(web3j, credentials, ps);
 				}
-				System.out.println("In danger position found !!! indexToken: " + ps.getIndexToken().getValue() + ", isLong: " + ps.getIsLong().getValue() + ", percentInLoss: " + percentInLoss);
+				logger.warn("In danger position found !!! indexToken: " + ps.getIndexToken().getValue() + ", isLong: " + ps.getIsLong().getValue() + ", percentInLoss: " + percentInLoss);
 			}
-			//TODO remove after test
-			createRescueOrder(web3j, credentials, ps);
 		}
 	}
 	
@@ -206,16 +204,18 @@ public class Trade {
 		openPositionRequest.setPath(path);
 		openPositionRequest.setIndexToken(ps.getIndexToken());
 		openPositionRequest.setAmountIn(GMXConstant.AMOUNT_IN);
-		// rescue order: so leverage 1.2 = 6/5 only
-		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(6)).divide(BigInteger.valueOf(5));
+		// rescue order: leverage x10
+		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(10));
 		openPositionRequest.setSizeDelta(new Uint256(sizeDelta));
-		// TODO buy with any price: calculate price and multiple/divide with a factor, but depend on long short
-		calculateRescuePrice(openPositionRequest);
 		openPositionRequest.setIsLong(ps.getIsLong());
+		calculateRescuePrice(openPositionRequest);
 		openPositionRequest.setMinOut(GMXConstant.MIN_OUT);
 		openPositionRequest.setExecutionFee(scAction.getMinExecutionFee(web3j));
 		openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
 		openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
+		logger.info(openPositionRequest);
+		
+		// TODO add a cooldown before deploy next rescue
 		// TODO uncomment this
 //		scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
 	}
@@ -225,6 +225,18 @@ public class Trade {
 		String indexToken = openPositionRequest.getIndexToken().getValue();
 		String currentPriceStr = currentPrices.get(Keys.toChecksumAddress(indexToken));
 		BigInteger currentPrice = new BigInteger(currentPriceStr);
-		System.out.println(currentPrice);
+
+		// calculate acceptable price
+		BigInteger acceptablePrice = new BigInteger("0");
+		if (openPositionRequest.getIsLong().getValue().booleanValue() == true) {
+			// Increase long: acceptablePrice = price * 1.005 (Acceptable Price < 1,840.41)
+			double tmp = currentPrice.doubleValue() * GMXConstant.SLIPPAGE;
+			acceptablePrice = BigDecimal.valueOf(tmp).toBigInteger();
+		} else {
+			// Increase short: acceptablePrice = price / 1.005 (Acceptable Price >1,860.48)
+			double tmp = currentPrice.doubleValue() / GMXConstant.SLIPPAGE;
+			acceptablePrice = BigDecimal.valueOf(tmp).toBigInteger();
+		}
+		openPositionRequest.setAcceptablePrice(new Uint256(acceptablePrice));
 	}
 }
