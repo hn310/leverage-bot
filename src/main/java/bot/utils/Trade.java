@@ -168,6 +168,7 @@ public class Trade {
 	}
 	
 	public void rescuePositionInDanger(Web3j web3j, Credentials credentials) throws IOException, TransactionException, InterruptedException, ExecutionException {
+		logger.info("searching for order to rescue");
 		BigInteger ZERO = BigInteger.valueOf(0);
 		List<PositionResponse> psList = scAction.getPositions(web3j, credentials);
 		for (PositionResponse ps: psList) {
