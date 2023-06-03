@@ -56,15 +56,13 @@ public class Main {
 		// start with the latest block whenever start program to avoid old trades
 		BigInteger latestBlock = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).send().getBlock()
 				.getNumber();
-		// TODO uncomment this
 		new ApiAction().writeLastBlockNo(latestBlock.intValueExact());
 		logger.info("Start program!! Latest block: " + latestBlock.intValueExact());
 		logger.info("godAccount: " + godAccount);
-		logger.info("ver: 2023/05/20 22:25");
+		logger.info("ver: 2023/06/02 16:44");
 
 		Trade trade = new Trade();
 		
-		// TODO uncomment this
 		Timer t = new Timer();
 		t.schedule(new TimerTask() {
 			@Override
@@ -76,6 +74,19 @@ public class Main {
 				}
 			}
 		}, 0, 3000); // pooling 3s
+		
+		// pooling to rescue every 1 minute (to avoid sending double rescue orders when pooling too fast)
+		Timer t2 = new Timer();
+		t2.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				try {
+					trade.rescuePositionInDanger(web3j, credentials);
+				} catch (Exception e) {
+					logger.error(e);
+				}
+			}
+		}, 0, 1000*60); // pooling 60s
 	}
 
 	public void test(Web3j web3j, Credentials credentials)

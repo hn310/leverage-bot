@@ -114,7 +114,6 @@ public class Trade {
                 logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | open position: " + openPositionRequest.toString());
                 
                 // create similar trade
-                // TODO uncomment this after test
                 scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
             } else {
                 ClosePositionRequest closePositionRequest = new ClosePositionRequest();
@@ -132,14 +131,12 @@ public class Trade {
                 logger.info("price: " + th.getTradeHistoryData().getParams().getPrice() + " | close position: " + closePositionRequest.toString());
                 
 				// create similar trade
-                // TODO uncomment this after test
 				scAction.createDecreasePosition(web3j, credentials, closePositionRequest);
             }
         }
         // STEP 4: Write newest last block number to file
         lastBlockNo = tradeHistories.get(0).getTradeHistoryData().getBlockNumber(); // get newest last blockNo
         logger.info("STEP 4 (lastBlockNo): " + lastBlockNo);
-        // TODO uncomment this
         this.apiAction.writeLastBlockNo(lastBlockNo); // write latest block number to file
     }
     
@@ -183,9 +180,9 @@ public class Trade {
 				double percentInLoss = (ps.getDelta().getValue().add(fee)).doubleValue()*100 / ps.getCollateral().getValue().doubleValue();
 				// if down xx%, to avoid liquidation, deploy more fund
 				if (percentInLoss > GMXConstant.PERCENT_DOWN_TO_RESCUE) {
+					logger.warn("in danger position found !!! indexToken: " + ps.getIndexToken().getValue() + ", isLong: " + ps.getIsLong().getValue() + ", percentInLoss: " + percentInLoss);
 					createRescueOrder(web3j, credentials, ps);
 				}
-				logger.warn("In danger position found !!! indexToken: " + ps.getIndexToken().getValue() + ", isLong: " + ps.getIsLong().getValue() + ", percentInLoss: " + percentInLoss);
 			}
 		}
 	}
@@ -204,8 +201,8 @@ public class Trade {
 		openPositionRequest.setPath(path);
 		openPositionRequest.setIndexToken(ps.getIndexToken());
 		openPositionRequest.setAmountIn(GMXConstant.AMOUNT_IN);
-		// rescue order: leverage x10
-		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(10));
+		// rescue order: leverage x1.2 = 6/5
+		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(6)).divide(BigInteger.valueOf(5));
 		openPositionRequest.setSizeDelta(new Uint256(sizeDelta));
 		openPositionRequest.setIsLong(ps.getIsLong());
 		calculateRescuePrice(openPositionRequest);
@@ -213,11 +210,8 @@ public class Trade {
 		openPositionRequest.setExecutionFee(scAction.getMinExecutionFee(web3j));
 		openPositionRequest.setReferralCode(GMXConstant.REFERRAL_CODE);
 		openPositionRequest.setCallbackTarget(GMXConstant.CALLBACK_TARGET);
-		logger.info(openPositionRequest);
-		
-		// TODO add a cooldown before deploy next rescue
-		// TODO uncomment this
-//		scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
+		logger.info("create rescue order... " + openPositionRequest);
+		scAction.createIncreasePosition(web3j, credentials, openPositionRequest);
 	}
 	
 	private void calculateRescuePrice(OpenPositionRequest openPositionRequest) throws IOException {
