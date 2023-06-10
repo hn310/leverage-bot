@@ -196,14 +196,14 @@ public class Trade {
 			path.add(new Address(GMXConstant.USDC_ADDRESS));
 			path.add(ps.getIndexToken());
 		} else {
-			// increase/decrease short: path[USDC] only
+			// increase short: path[USDC] only
 			path.add(new Address(GMXConstant.USDC_ADDRESS));
 		}
 		openPositionRequest.setPath(path);
 		openPositionRequest.setIndexToken(ps.getIndexToken());
 		openPositionRequest.setAmountIn(GMXConstant.AMOUNT_IN);
-		// rescue order: leverage x1.2 = 6/5
-		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(6)).divide(BigInteger.valueOf(5));
+		// rescue order: leverage x1.1 = 11/10
+		BigInteger sizeDelta = GMXConstant.AMOUNT_IN.getValue().multiply(BigInteger.valueOf(11)).divide(BigInteger.valueOf(10));
 		openPositionRequest.setSizeDelta(new Uint256(sizeDelta));
 		openPositionRequest.setIsLong(ps.getIsLong());
 		calculateRescuePrice(openPositionRequest);

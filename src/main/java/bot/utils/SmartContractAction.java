@@ -78,13 +78,14 @@ public class SmartContractAction {
         inputs.add(new Address(credentials.getAddress()));
         // array of collateralTokens
         List<Address> collateralTokens = new ArrayList<Address>();
+        // when long: collateral = index token (WBTC), when short: collateral = USDC, index token = WBTC
+        collateralTokens.add(new Address(GMXConstant.WBTC_ADDRESS));
         collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.WETH_ADDRESS));
         collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.LINK_ADDRESS));
         collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
-        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
-        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
-        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
-        collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
+        collateralTokens.add(new Address(GMXConstant.UNI_ADDRESS));
         collateralTokens.add(new Address(GMXConstant.USDC_ADDRESS));
         inputs.add(new DynamicArray(collateralTokens));
         collateralTokensNumber = collateralTokens.size();
